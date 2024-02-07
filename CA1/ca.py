@@ -8,8 +8,13 @@ def decimal_to_base_k(n, k):
     base-k equivalant.
 
     For example, for n=34 and k=3 this function should return [1, 0, 2, 1]."""
-
-    pass
+    if n == 0:
+        return [0]
+    res = []
+    while n:
+        res += [int(n % k)]
+        n //= k
+    return res[::-1]
 
 
 class CASim(Model):
@@ -40,27 +45,28 @@ class CASim(Model):
         For example, for rule=34, k=3, r=1 this function should set rule_set to
         [0, ..., 0, 1, 0, 2, 1] (length 27). This means that for example
         [2, 2, 2] -> 0 and [0, 0, 1] -> 2."""
-
-        self.rule_set = ...
+        rule_set_size = self.k ** (2 * self.r + 1)
+        conv = decimal_to_base_k(self.rule, self.k)
+        self.rule_set = [0] * (rule_set_size - len(conv)) + conv 
 
     def check_rule(self, inp):
         """Returns the new state based on the input states.
 
         The input state will be an array of 2r+1 items between 0 and k, the
-        neighbourhood which the state of the new cell depends on."""
-
-        pass
-
+        neighbourhood which the state of the new cell depends on.""" 
+        input_decimal = sum(inp[i] * (self.k ** (len(inp) - 1 - i)) for i in range(len(inp)))
+        input_decimal = input_decimal % len(self.rule_set)
+        new_state = self.rule_set[int(input_decimal)]
+        return new_state
+    
     def setup_initial_row(self):
         """Returns an array of length `width' with the initial state for each of
         the cells in the first row. Values should be between 0 and k."""
-
-        return np.zeros(self.width)
-
+        return np.random.randint(low=0, high=self.k, size=self.width)
+            
     def reset(self):
         """Initializes the configuration of the cells and converts the entered
         rule number to a rule set."""
-
         self.t = 0
         self.config = np.zeros([self.height, self.width])
         self.config[0, :] = self.setup_initial_row()
