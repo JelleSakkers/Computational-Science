@@ -53,11 +53,9 @@ class CASim(Model):
         """Returns the new state based on the input states.
 
         The input state will be an array of 2r+1 items between 0 and k, the
-        neighbourhood which the state of the new cell depends on.""" 
-        input_decimal = sum(inp[i] * (self.k ** (len(inp) - 1 - i)) for i in range(len(inp)))
-        input_decimal = input_decimal % len(self.rule_set)
-        new_state = self.rule_set[int(input_decimal)]
-        return new_state
+        neighbourhood which the state of the new cell depends on."""
+        idx = sum(inp[i] * (self.k ** i) for i in range(len(inp)))
+        return self.rule_set[-(1 + int(idx))]
     
     def setup_initial_row(self):
         """Returns an array of length `width' with the initial state for each of
