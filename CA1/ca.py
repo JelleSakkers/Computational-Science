@@ -60,8 +60,10 @@ class CASim(Model):
     def setup_initial_row(self):
         """Returns an array of length `width' with the initial state for each of
         the cells in the first row. Values should be between 0 and k."""
-        return np.random.randint(low=0, high=self.k, size=self.width)
-            
+        a = np.bincount([self.width // 2], [self.k - 1], self.width)
+        b = np.random.randint(low=0, high=self.k, size=self.width)
+        return a
+    
     def reset(self):
         """Initializes the configuration of the cells and converts the entered
         rule number to a rule set."""
