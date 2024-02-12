@@ -165,7 +165,6 @@ class Cycle(CASim):
             self.sim.reset()
             
             self.avg_cycles.append(self.stats())
-        print(self.avg_cycles)
         
         self.__plot__()
          
