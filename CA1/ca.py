@@ -24,6 +24,7 @@ class CASim(Model):
         Model.__init__(self)
 
         self.t = 0
+        self.neighbourhood = []
         self.rule_set = []
         self.config = None
 
@@ -84,7 +85,7 @@ class CASim(Model):
                 cmap=matplotlib.cm.binary)
         plt.axis('image')
         plt.title('t = %d' % self.t)
-
+ 
     def step(self):
         """Performs a single step of the simulation by advancing time (and thus
         row) and applying the rule to determine the state of the cells."""
@@ -100,6 +101,7 @@ class CASim(Model):
             indices = [i % self.width
                     for i in range(patch - self.r, patch + self.r + 1)]
             values = self.config[self.t - 1, indices]
+            self.neighbourhood.append(values)
             self.config[self.t, patch] = self.check_rule(values)
         
 
@@ -126,7 +128,7 @@ class Cycle(CASim):
         self.cycles.append(c_length)
 
     def __plot__(self, rules, avg_cycles):
-        """ """
+        """ Plot the average cycle lengths over 256 Wolfram Rules"""
         plt.plot(rules, avg_cycles, marker='o')
         plt.xlabel('Rule Number')
         plt.ylabel('Average Cycle Length')
@@ -153,7 +155,6 @@ class Cycle(CASim):
     def run_experiments(self):
         """Run experiments for different rules."""
         self.__experiments_init__()
-        table = []
         
         for rule in self.rules:
             self.sim.setter_rule(rule)
@@ -161,7 +162,7 @@ class Cycle(CASim):
 
             for _ in range(int(self.t_max)):
                 self.sim.step()
-                table.append(self.sim.config[self.sim.t])
+            print("d")
 
     def plot_experiments(self):
         pass
