@@ -116,7 +116,7 @@ class Cycle(CASim):
 
     def __experiments_init__(self):
         self.rules = list(range(1, 2**8 + 1))
-        self.t_max = 10e6
+        self.t_max = 1e6
         self.avg_cycles = []
 
     def __detect__(self, i, v):
