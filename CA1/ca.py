@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import numpy as np
 
 from pyics import Model
 
@@ -15,47 +17,6 @@ def decimal_to_base_k(n, k):
         res += [int(n % k)]
         n //= k
     return res[::-1]
-
-
-class Cycle:
-    def __init__(self):
-        self.seen = {}
-        self.cycles = []
-
-    def __detect_init__(self, table):
-        self.table = table
-
-    def __detect__(self, i, v):
-        c_start = self.seen[v]
-        c_length = i - c_start
-        self.cycles.append((c_start, c_length))
-
-    def __plot__(self):
-        pass
-
-    def detect(self, table):
-        self.__detect_init__(table)
-        
-        for i, v in enumerate(self.table):
-            v = tuple(v)
-            if v in self.seen:
-                self.__detect__(i, v)
-            else:
-                self.seen[v] = i
-        print(self.cycles)
-
-    def stats(self):
-        pass
-
-    def run(self, cx):  
-        rules = [i for i in range(1, 2**8 + 1)]
-        
-        for rule in rules:
-            cx.setter_rule(rule)
-            cx.s
-
-    def plot_experiment(self):
-        pass
 
 
 class CASim(Model):
@@ -116,10 +77,6 @@ class CASim(Model):
 
     def draw(self):
         """Draws the current state of the grid."""
-
-        import matplotlib
-        import matplotlib.pyplot as plt
-
         plt.cla()
         if not plt.gca().yaxis_inverted():
             plt.gca().invert_yaxis()
@@ -131,8 +88,6 @@ class CASim(Model):
     def step(self):
         """Performs a single step of the simulation by advancing time (and thus
         row) and applying the rule to determine the state of the cells."""
-        cycle = Cycle() 
-        table = []
         self.t += 1
         if self.t >= self.height:
             return True
@@ -145,13 +100,76 @@ class CASim(Model):
             indices = [i % self.width
                     for i in range(patch - self.r, patch + self.r + 1)]
             values = self.config[self.t - 1, indices]
-            table.append(values)
             self.config[self.t, patch] = self.check_rule(values)
         
-        cycle.detect(table)
+
+class Cycle(CASim):
+    def __init__(self, sim):
+        """Initialize Cycle class with a reference to the given simulation."""
+        self.sim = sim
+
+    def __detect_init__(self, table):
+        """Initialize the detection process with the given table."""
+        self.seen = {}
+        self.cycles = []
+        self.table = table
+
+    def __experiments_init__(self):
+        self.rules = list(range(1, 2**8 + 1))
+        self.t_max = 10e6
+        self.avg_cycles = []
+
+    def __detect__(self, i, v):
+        """Detect cycles in the simulation and update cycle information."""
+        c_start = self.seen[v]
+        c_length = i - c_start
+        self.cycles.append(c_length)
+
+    def __plot__(self, rules, avg_cycles):
+        """ """
+        plt.plot(rules, avg_cycles, marker='o')
+        plt.xlabel('Rule Number')
+        plt.ylabel('Average Cycle Length')
+        plt.title('Average Cycle Length vs. Rule Number')
+        plt.grid(True)
+        plt.show()
+        plt.savefig("test.png")
+
+    def detect(self, table):
+        """Detect cycles in the provided table."""
+        self.__detect_init__(table)
+        
+        for i, v in enumerate(self.table):
+            v = tuple(v)
+            if v in self.seen:
+                self.__detect__(i, v)
+            else:
+                self.seen[v] = i
+    
+    def stats(self):
+        """Calculate and return the average cycle length."""
+        return np.average(np.array(self.cycles))
+
+    def run_experiments(self):
+        """Run experiments for different rules."""
+        self.__experiments_init__()
+        table = []
+        
+        for rule in self.rules:
+            self.sim.setter_rule(rule)
+            self.sim.reset()
+
+            for _ in range(int(self.t_max)):
+                self.sim.step()
+                table.append(self.sim.config[self.sim.t])
+
+    def plot_experiments(self):
+        pass
 
 if __name__ == '__main__':
     sim = CASim()
     from pyics import GUI
     cx = GUI(sim)
-    cx.start()
+    
+    cycle = Cycle(sim)
+    cycle.run_experiments()
