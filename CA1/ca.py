@@ -17,6 +17,47 @@ def decimal_to_base_k(n, k):
     return res[::-1]
 
 
+class Cycle:
+    def __init__(self):
+        self.seen = {}
+        self.cycles = []
+
+    def __detect_init__(self, table):
+        self.table = table
+
+    def __detect__(self, i, v):
+        c_start = self.seen[v]
+        c_length = i - c_start
+        self.cycles.append((c_start, c_length))
+
+    def __plot__(self):
+        pass
+
+    def detect(self, table):
+        self.__detect_init__(table)
+        
+        for i, v in enumerate(self.table):
+            v = tuple(v)
+            if v in self.seen:
+                self.__detect__(i, v)
+            else:
+                self.seen[v] = i
+        print(self.cycles)
+
+    def stats(self):
+        pass
+
+    def run(self, cx):  
+        rules = [i for i in range(1, 2**8 + 1)]
+        
+        for rule in rules:
+            cx.setter_rule(rule)
+            cx.s
+
+    def plot_experiment(self):
+        pass
+
+
 class CASim(Model):
     def __init__(self):
         Model.__init__(self)
@@ -50,7 +91,8 @@ class CASim(Model):
         self.rule_set = [0] * (rule_set_size - len(conv)) + conv 
 
     def check_rule(self, inp):
-        """Returns the new state based on the input states.
+        """Returns the new state b
+        ased on the input states.
 
         The input state will be an array of 2r+1 items between 0 and k, the
         neighbourhood which the state of the new cell depends on."""
@@ -89,6 +131,8 @@ class CASim(Model):
     def step(self):
         """Performs a single step of the simulation by advancing time (and thus
         row) and applying the rule to determine the state of the cells."""
+        cycle = Cycle() 
+        table = []
         self.t += 1
         if self.t >= self.height:
             return True
@@ -101,8 +145,10 @@ class CASim(Model):
             indices = [i % self.width
                     for i in range(patch - self.r, patch + self.r + 1)]
             values = self.config[self.t - 1, indices]
+            table.append(values)
             self.config[self.t, patch] = self.check_rule(values)
-
+        
+        cycle.detect(table)
 
 if __name__ == '__main__':
     sim = CASim()
