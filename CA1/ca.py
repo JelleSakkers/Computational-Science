@@ -24,8 +24,8 @@ class CASim(Model):
         Model.__init__(self)
 
         self.t = 0
-        self.neighbourhood = []
         self.rule_set = []
+        self.neighbourhood = []
         self.config = None
 
         self.make_param('r', 1)
@@ -110,14 +110,13 @@ class Cycle(CASim):
         """Initialize Cycle class with a reference to the given simulation."""
         self.sim = sim
 
-    def __detect_init__(self, table):
+    def __detect_init__(self):
         """Initialize the detection process with the given table."""
         self.seen = {}
         self.cycles = []
-        self.table = table
 
     def __experiments_init__(self):
-        self.rules = list(range(1, 2**8 + 1))
+        self.rules = list(range(1, 2**0 + 1))
         self.t_max = 1e6
         self.avg_cycles = []
 
@@ -127,26 +126,24 @@ class Cycle(CASim):
         c_length = i - c_start
         self.cycles.append(c_length)
 
-    def __plot__(self, rules, avg_cycles):
+    def __plot__(self):
         """ Plot the average cycle lengths over 256 Wolfram Rules"""
-        plt.plot(rules, avg_cycles, marker='o')
+        plt.plot(self.rules, self.avg_cycles, marker='o')
         plt.xlabel('Rule Number')
         plt.ylabel('Average Cycle Length')
         plt.title('Average Cycle Length vs. Rule Number')
         plt.grid(True)
         plt.show()
-        plt.savefig("test.png")
 
     def detect(self, table):
         """Detect cycles in the provided table."""
-        self.__detect_init__(table)
+        self.__detect_init__()
         
-        for i, v in enumerate(self.table):
+        for i, v in enumerate(table):
             v = tuple(v)
             if v in self.seen:
                 self.__detect__(i, v)
-            else:
-                self.seen[v] = i
+            self.seen[v] = i
     
     def stats(self):
         """Calculate and return the average cycle length."""
@@ -162,8 +159,16 @@ class Cycle(CASim):
 
             for _ in range(int(self.t_max)):
                 self.sim.step()
-            print("d")
-
+            
+            self.detect(self.sim.neighbourhood)
+            self.sim.neighbourhood.clear()
+            self.sim.reset()
+            
+            self.avg_cycles.append(self.stats())
+        print(self.avg_cycles)
+        
+        self.__plot__()
+         
     def plot_experiments(self):
         pass
 
