@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import numpy as np
 
 from pyics import Model
 
@@ -31,8 +30,8 @@ class CASim(Model):
         self.make_param('r', 1)
         self.make_param('k', 2)
         self.make_param('width', 50)
-        self.make_param('height', 50)
-        self.make_param('rule', 30, setter=self.setter_rule)
+        self.make_param('height', 10000)
+        self.make_param('rule', 1, setter=self.setter_rule)
 
     def setter_rule(self, val):
         """Setter for the rule parameter, clipping its value between 0 and the
@@ -72,20 +71,25 @@ class CASim(Model):
         """Initializes the configuration of the cells and converts the entered
         rule number to a rule set."""
         self.t = 0
+        self.neighbourhood = []
         self.config = np.zeros([self.height, self.width])
         self.config[0, :] = self.setup_initial_row()
         self.build_rule_set()
 
     def draw(self):
         """Draws the current state of the grid."""
+
+        import matplotlib
+        import matplotlib.pyplot as plt
+
         plt.cla()
         if not plt.gca().yaxis_inverted():
             plt.gca().invert_yaxis()
         plt.imshow(self.config, interpolation='none', vmin=0, vmax=self.k - 1,
                 cmap=matplotlib.cm.binary)
         plt.axis('image')
-        plt.title('t = %d' % self.t)
- 
+        plt.title('t = %d' % self.t)  
+    
     def step(self):
         """Performs a single step of the simulation by advancing time (and thus
         row) and applying the rule to determine the state of the cells."""
@@ -101,10 +105,10 @@ class CASim(Model):
             indices = [i % self.width
                     for i in range(patch - self.r, patch + self.r + 1)]
             values = self.config[self.t - 1, indices]
-            self.neighbourhood.append(values)
-            self.config[self.t, patch] = self.check_rule(values)
+            self.config[self.t, patch] = self.check_rule(values) 
         
-
+        self.neighbourhood.append(self.config[self.t])
+        
 class Cycle(CASim):
     def __init__(self, sim):
         """Initialize Cycle class with a reference to the given simulation."""
@@ -117,8 +121,8 @@ class Cycle(CASim):
 
     def __experiments_init__(self):
         """Initialize the experiment variables. Rules is initialize from 1 till 256. """
-        self.rules = list(range(1, 2**2 + 1))
-        self.t_max = 1e6
+        self.rules = [i for i in range(0, 2 ** 8 + 1]
+        self.t_max = 10 ** 4=
         self.avg_cycles = []
 
     def __detect__(self, i, v):
@@ -147,32 +151,32 @@ class Cycle(CASim):
     
     def stats(self):
         """Calculate and return the average cycle length."""
-        return np.average(np.array(self.cycles))
+        return self.avg_cycles.append(np.average(np.array(self.cycles)))
 
     def run_experiments(self):
-        """Run experiments for different rules."""
+        """Run experiments for 256 Wolfram Rules."""
         self.__experiments_init__()
+        self.sim.t = self.t_max
         
         for rule in self.rules:
-            self.sim.setter_rule(rule)
+            self.sim.reset()
+            self.sim.rule = rule
 
-            for _ in range(int(self.t_max)):
+            for _ in range(self.t_max):
                 self.sim.step()
             
             self.detect(self.sim.neighbourhood)
-            self.sim.neighbourhood.clear()
             self.sim.reset()
-            
-            self.avg_cycles.append(self.stats())
-         
+            self.stats()
+ 
     def plot_experiments(self): 
         self.__plot__()
-        plt.plot(self.rules, self.avg_cycles, marker='o')
 
 if __name__ == '__main__':
     sim = CASim()
     from pyics import GUI
     cx = GUI(sim)
+    #cx.start()    
     
     cycle = Cycle(sim)
     cycle.run_experiments()
