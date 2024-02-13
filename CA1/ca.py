@@ -116,7 +116,8 @@ class Cycle(CASim):
         self.cycles = []
 
     def __experiments_init__(self):
-        self.rules = list(range(1, 2**0 + 1))
+        """Initialize the experiment variables. Rules is initialize from 1 till 256. """
+        self.rules = list(range(1, 2**2 + 1))
         self.t_max = 1e6
         self.avg_cycles = []
 
@@ -128,7 +129,6 @@ class Cycle(CASim):
 
     def __plot__(self):
         """ Plot the average cycle lengths over 256 Wolfram Rules"""
-        plt.plot(self.rules, self.avg_cycles, marker='o')
         plt.xlabel('Rule Number')
         plt.ylabel('Average Cycle Length')
         plt.title('Average Cycle Length vs. Rule Number')
@@ -155,7 +155,6 @@ class Cycle(CASim):
         
         for rule in self.rules:
             self.sim.setter_rule(rule)
-            self.sim.reset()
 
             for _ in range(int(self.t_max)):
                 self.sim.step()
@@ -165,11 +164,10 @@ class Cycle(CASim):
             self.sim.reset()
             
             self.avg_cycles.append(self.stats())
-        
-        self.__plot__()
          
-    def plot_experiments(self):
-        pass
+    def plot_experiments(self): 
+        self.__plot__()
+        plt.plot(self.rules, self.avg_cycles, marker='o')
 
 if __name__ == '__main__':
     sim = CASim()
