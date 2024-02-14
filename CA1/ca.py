@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from pyics import Model
-from plot import plot_cycles
+
 
 def create_class_dict():
     data = np.genfromtxt('rule_class_wolfram.csv', delimiter=',')
@@ -12,6 +12,7 @@ def create_class_dict():
         values = data[data[:, 1] == i][:, 0]
         class_dict[i] = values
     return class_dict
+
 
 def decimal_to_base_k(n, k):
     """Converts a given decimal (i.e. base-10 integer) to a list containing the
@@ -158,31 +159,31 @@ class Cycle(CASim):
             self.seen[v] = i
 
     def stats(self):
-        """Calculate and return the average cycle length."""
+        """Calculate the average cycle lenght. Append zero when
+        a empty list is encounterd."""
         self.avg_cycles.append(np.mean(np.array(self.cycles))) if self.cycles else self.avg_cycles.append(0)
 
     def run_experiments(self):
         """Run experiments for 256 Wolfram Rules."""
         self.__experiments_init__()
-        self.sim.t = self.t_max 
-        
-        for rule in self.rules:
+        self.sim.t = self.t_max
 
+        for rule in self.rules:
             self.sim.rule = rule
             self.sim.reset()
 
             for _ in range(self.t_max):
                 self.sim.step()
-
             self.detect(self.sim.neighbourhood)
             self.stats()
+
         self.plot_experiments()
 
-
     def plot_experiments(self):
-        """Plot the experiment results, with bars colored based on class number."""
+        """Plot the 256 Wolfram experiment results. Every rule is
+        categorised and colored based one of the four Wolfram classes."""
         self.__plot__()
-         
+
         class_dict = create_class_dict()
         class_colors = {1: 'red', 2: 'green', 3: 'blue', 4: 'yellow'}
 
@@ -195,14 +196,15 @@ class Cycle(CASim):
             colors.append(class_colors[class_v])
 
         legend_labels = {class_num: f'Wolfram class {class_num}' for class_num in class_colors.keys()}
-        
+
         plt.ylim(0, 100)
-        
+
         plt.legend(handles=[plt.Line2D([0], [0], color=class_colors[color], label=label) for color, label in legend_labels.items()])
         plt.bar(np.linspace(0, 255, 256), ys, color=colors, width=0.2)
-        
+
         plt.xticks(np.arange(0, 256, 50))
         plt.savefig('test.png')
+
 
 if __name__ == '__main__':
     sim = CASim()
