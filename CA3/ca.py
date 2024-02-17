@@ -17,6 +17,7 @@ def decimal_to_base_k(n, k):
         n //= k
     return res[::-1]
 
+
 class CASim(Model):
     def __init__(self):
         Model.__init__(self)
@@ -104,6 +105,7 @@ class CASim(Model):
             values = self.config[self.t - 1, indices]
             self.config[self.t, patch] = self.check_rule(values)
 
+
 class TableWalkThrough(CASim):
     def __init__(self):
         CASim.__init__(self)
@@ -112,22 +114,20 @@ class TableWalkThrough(CASim):
 
     def __select_method__(self, method='increase'):
         """Select the grow method of Langto's parameter."""
-        method_func = self.increase_x()
+        method_func = self.increase_x
 
         if method == "increase":
-            method_func = self.increase_x()
+            method_func = self.increase_x
         elif method == "decrease":
-            method_func = self.decrease_x()
+            method_func = self.decrease_x
         return method_func
-    
+
     def __walk_through__(self, method_func):
         """Intermediate steps."""
         # retrieve the quiescent state
         sq = self.get_quiescent_state()
-        # count the amount of transitions to the quiescent state
-        N = self.count_transitions_to_state(sq)
-        # calulate Langton's parameter 
-        x = self.calculate_x_parameter(N)
+        # calulate Langton's parameter
+        x = self.calculate_x_parameter(sq)
         # update rule table
         method_func(sq)
         return x
@@ -148,16 +148,16 @@ class TableWalkThrough(CASim):
         """Count transitions to the specified state in the rule set."""
         return np.count_nonzero(self.rule_set == sq)
 
-    def calculate_x_parameter(self):
+    def calculate_x_parameter(self, sq):
         """Calculate the Langto's parameter based on the count
         of transitions to the quiescent state."""
         k = self.get_rule_size()
-        n = self.count_transitions_to_state(self)
+        n = self.count_transitions_to_state(sq)
         return (k - n) / k
-    
+
     def increase_x(self, sq):
         """Increase X: Replace transitions to Sq with transitions to other states."""
-        i = np.random.choice(np.where(self.rule_set != qs)[0], size=3)
+        i = np.random.choice(np.where(self.rule_set != sq)[0], size=3)
         self.rule_set[i] = np.random.choice(np.delete(range(self.k), sq), size=len(i))
 
     def decrease_x(self, sq):
@@ -170,18 +170,22 @@ class TableWalkThrough(CASim):
         and start by building up zeros."""
         qs = self.get_quiescent_state()
         return np.full(self.get_rule_size(), qs, dtype=int)
-    
+
     def walk_through(self, method, t):
         """Perform the table walk-through method to update the transition tables."""
         method_func = self.__select_method__(method)
         lambda_prime = 0
-        
+
         while lambda_prime < t:
             lambda_prime = self.__walk_through__(method_func)
+            print(lambda_prime)
+
 
 if __name__ == '__main__':
     sim = CASim()
     from pyics import GUI
     cx = GUI(sim)
 
-    cx.start()
+    # cx.start()
+    table = TableWalkThrough()
+    table.walk_through('increase', 0.5)
