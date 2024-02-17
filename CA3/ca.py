@@ -125,11 +125,11 @@ class TableWalkThrough(CASim):
         # retrieve the quiescent state
         sq = self.get_quiescent_state()
         # count the amount of transitions to the quiescent state
-        N = self.count_transitions_to_state(qs)
+        N = self.count_transitions_to_state(sq)
         # calulate Langton's parameter 
-        x = self.calculate_x_parameter(n)
+        x = self.calculate_x_parameter(N)
         # update rule table
-        method_func(qs)
+        method_func(sq)
         return x
 
     def get_item(self, i):
@@ -144,9 +144,9 @@ class TableWalkThrough(CASim):
         """Choose a quiescent state randomly."""
         return np.random.choice(range(self.k))
 
-    def count_transitions_to_state(self, qs):
+    def count_transitions_to_state(self, sq):
         """Count transitions to the specified state in the rule set."""
-        return np.count_nonzero(self.rule_set == qs)
+        return np.count_nonzero(self.rule_set == sq)
 
     def calculate_x_parameter(self):
         """Calculate the Langto's parameter based on the count
@@ -155,15 +155,15 @@ class TableWalkThrough(CASim):
         n = self.count_transitions_to_state(self)
         return (k - n) / k
     
-    def increase_x(self, qs):
+    def increase_x(self, sq):
         """Increase X: Replace transitions to Sq with transitions to other states."""
         i = np.random.choice(np.where(self.rule_set != qs)[0], size=3)
-        self.rule_set[i] = np.random.choice(np.delete(range(self.k), qs), size=len(i))
+        self.rule_set[i] = np.random.choice(np.delete(range(self.k), sq), size=len(i))
 
-    def decrease_x(self, qs):
+    def decrease_x(self, sq):
         """Decrease X: Replace transitions not to Sq with transitions to Sq."""
-        i = np.random.choice(np.where(self.rule_set != qs)[0], size=3)
-        self.rule_set[i] = qs
+        i = np.random.choice(np.where(self.rule_set != sq)[0], size=3)
+        self.rule_set[i] = sq
 
     def build_initial_rule_set_to_sq(self):
         """Build an initial rule set with transitions entirely to the quiescent state,
