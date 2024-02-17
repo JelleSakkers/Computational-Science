@@ -159,12 +159,12 @@ class TableWalkThrough(CASim):
 
     def increase_x(self, sq):
         """Increase X: Replace transitions to Sq with transitions to other states."""
-        i = np.random.choice(np.where(self.rule_set != sq)[0], size=3)
+        i = np.random.choice(np.where(range(0, self.k) != sq)[0], size=3)
         self.rule_set[i] = np.random.choice(np.delete(range(self.k), sq), size=len(i))
 
     def decrease_x(self, sq):
         """Decrease X: Replace transitions not to Sq with transitions to Sq."""
-        i = np.random.choice(np.where(self.rule_set != sq)[0], size=3)
+        i = np.random.choice(np.where(range(0, self.k) != sq)[0], size=3)
         self.rule_set[i] = sq
 
     def build_initial_rule_set_to_sq(self, sq):
@@ -179,7 +179,6 @@ class TableWalkThrough(CASim):
 
         while lambda_prime < t:
             lambda_prime = self.__walk_through__(method_func)
-            print(lambda_prime)
 
 if __name__ == '__main__':
     sim = CASim()
