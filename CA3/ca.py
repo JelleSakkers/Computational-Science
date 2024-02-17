@@ -126,6 +126,8 @@ class TableWalkThrough(CASim):
         """Intermediate steps."""
         # retrieve the quiescent state
         sq = self.get_quiescent_state()
+        # build an initial rule set
+        self.build_initial_rule_set_to_sq(sq)
         # calulate Langton's parameter
         x = self.calculate_x_parameter(sq)
         # update rule table
@@ -165,11 +167,10 @@ class TableWalkThrough(CASim):
         i = np.random.choice(np.where(self.rule_set != sq)[0], size=3)
         self.rule_set[i] = sq
 
-    def build_initial_rule_set_to_sq(self):
+    def build_initial_rule_set_to_sq(self, sq):
         """Build an initial rule set with transitions entirely to the quiescent state,
         and start by building up zeros."""
-        qs = self.get_quiescent_state()
-        return np.full(self.get_rule_size(), qs, dtype=int)
+        return np.full(self.get_rule_size(), sq, dtype=int)
 
     def walk_through(self, method, t):
         """Perform the table walk-through method to update the transition tables."""
@@ -179,7 +180,6 @@ class TableWalkThrough(CASim):
         while lambda_prime < t:
             lambda_prime = self.__walk_through__(method_func)
             print(lambda_prime)
-
 
 if __name__ == '__main__':
     sim = CASim()
