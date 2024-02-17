@@ -135,7 +135,6 @@ class TableWalkThrough(CASim):
         method_func(sq)
         print("After updating rule table:")
         print("Rule set:", self.rule_set)
-
         return x
 
     def get_item(self, i):
