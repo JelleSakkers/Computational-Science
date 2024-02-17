@@ -127,7 +127,7 @@ class TableWalkThrough(CASim):
         return np.count_nonzero(self.rule_set == qs)
 
     def calculate_x_parameter(self):
-        """Calculate the Langto's lambda parameter based on the count
+        """Calculate the Langto's parameter based on the count
         of transitions to the quiescent state."""
         k = self.get_rule_size()
         n = self.count_transitions_to_state(self)
@@ -149,7 +149,7 @@ class TableWalkThrough(CASim):
         qs = self.get_quiescent_state()
         return np.full(self.get_rule_size(), qs, dtype=int)
     
-    def table_walk_through(self):
+    def table_walk_through(self, d):
         """Perform the table walk-through method to update the transition tables."""
         # retrieve the quiescent state
         sq = self.get_quiescent_state()
@@ -158,7 +158,7 @@ class TableWalkThrough(CASim):
         # calulate Langton's parameter 
         x = self.calculate_x_parameter(n)
 
-        if np.random.rand() > x:
+        if d:
             self.increase_x(qs):
         else:
             self.decrease_x(qs):
