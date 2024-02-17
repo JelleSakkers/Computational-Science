@@ -122,16 +122,20 @@ class TableWalkThrough(CASim):
             method_func = self.decrease_x
         return method_func
 
-    def __walk_through__(self, method_func):
+    def __walk_through__(self, method_func, sq):
         """Intermediate steps."""
-        # retrieve the quiescent state
-        sq = self.get_quiescent_state()
-        # build an initial rule set
-        self.build_initial_rule_set_to_sq(sq)
-        # calulate Langton's parameter
+        print("Before walk-through:")
+        print("Initial rule set:", self.rule_set)
+
+        # calculate Langton's parameter
         x = self.calculate_x_parameter(sq)
+        print("Langton's parameter (before update):", x)
+
         # update rule table
         method_func(sq)
+        print("After updating rule table:")
+        print("Rule set:", self.rule_set)
+
         return x
 
     def get_item(self, i):
@@ -159,12 +163,12 @@ class TableWalkThrough(CASim):
 
     def increase_x(self, sq):
         """Increase X: Replace transitions to Sq with transitions to other states."""
-        i = np.random.choice(np.where(range(0, self.k) != sq)[0], size=3)
+        i = np.random.choice(np.where(self.rule_set == sq)[0], size=3)
         self.rule_set[i] = np.random.choice(np.delete(range(self.k), sq), size=len(i))
 
     def decrease_x(self, sq):
         """Decrease X: Replace transitions not to Sq with transitions to Sq."""
-        i = np.random.choice(np.where(range(0, self.k) != sq)[0], size=3)
+        i = np.random.choice(np.where(range(self.k) != sq)[0], size=3)
         self.rule_set[i] = sq
 
     def build_initial_rule_set_to_sq(self, sq):
@@ -175,10 +179,12 @@ class TableWalkThrough(CASim):
     def walk_through(self, method, t):
         """Perform the table walk-through method to update the transition tables."""
         method_func = self.__select_method__(method)
+        sq = self.get_quiescent_state()
+        self.build_initial_rule_set_to_sq(sq)
         lambda_prime = 0
 
         while lambda_prime < t:
-            lambda_prime = self.__walk_through__(method_func)
+            lambda_prime = self.__walk_through__(method_func, sq)
 
 if __name__ == '__main__':
     sim = CASim()
