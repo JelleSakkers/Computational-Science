@@ -110,6 +110,18 @@ class TableWalkThrough(CASim):
 
         self.rule_set = np.zeros(self.get_rule_size())
 
+    def __select_method__(self, method='increase'):
+        method_func = self.increase_x()
+
+        if method == "increase":
+            method_func = self.increase_x()
+        elif method == "decrease":
+            method_func self.decrease_x()
+        return method_func
+    
+    def __walk_through__(self, method_func):
+
+
     def get_item(self, i):
         """ Retrieve item from rule set"""
         return self.rule_set[i]
@@ -140,7 +152,7 @@ class TableWalkThrough(CASim):
 
     def decrease_x(self, qs):
         """Decrease X: Replace transitions not to Sq with transitions to Sq."""
-        i = np.random.choice(np.where(self.rule_set != sq)[0], size=3))
+        i = np.random.choice(np.where(self.rule_set != qs)[0], size=3))
         self.rule_set[i] = qs
 
     def build_initial_rule_set_to_sq(self):
@@ -149,7 +161,7 @@ class TableWalkThrough(CASim):
         qs = self.get_quiescent_state()
         return np.full(self.get_rule_size(), qs, dtype=int)
     
-    def table_walk_through(self, d):
+    def walk_through(self, method, t):
         """Perform the table walk-through method to update the transition tables."""
         # retrieve the quiescent state
         sq = self.get_quiescent_state()
