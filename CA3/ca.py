@@ -170,7 +170,7 @@ class TableWalkThrough(CASim):
     def build_initial_rule_set_to_sq(self, sq):
         """Build an initial rule set with transitions entirely to the quiescent state,
         and start by building up zeros."""
-        return np.full(self.get_rule_size(), sq, dtype=int)
+        self.rule_set = np.full(self.get_rule_size(), sq, dtype=int)
 
     def walk_through(self, method, t):
         """Perform the table walk-through method to update the transition tables."""
