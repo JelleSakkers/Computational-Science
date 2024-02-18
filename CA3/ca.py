@@ -112,7 +112,7 @@ class TableWalkThrough(CASim):
         self.rule_set = np.zeros(self.get_rule_size())
 
     def __select_method__(self, method='increase'):
-        """Select the grow method of Langto's parameter."""
+        """Select the grow method of Langton's parameter."""
         method_func = self.increase_x
 
         if method == "increase":
