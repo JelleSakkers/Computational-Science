@@ -183,7 +183,7 @@ class TableWalkThrough(CASim):
 
 class SimRunner(self):
     def __init__(self, n):
-        self.sim = GUI(CASim)
+        self.sim = GUI(CASim())
         self.rule_builder = TableWalkThrough()
 
     def __simulation_init__(self):
