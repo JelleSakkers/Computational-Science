@@ -105,6 +105,7 @@ class CASim(Model):
             values = self.config[self.t - 1, indices]
             self.config[self.t, patch] = self.check_rule(values)
 
+
 class TableWalkThrough(CASim):
     def __init__(self):
         CASim.__init__(self)
@@ -123,20 +124,16 @@ class TableWalkThrough(CASim):
 
     def __walk_through__(self, method_func, sq):
         """Intermediate steps."""
-        # print("Before walk-through:")
-        # print("Initial rule set:", self.rule_set)
+        print("Before walk-through:")
+        print("Initial rule set:", self.rule_set)
 
         x = self.calculate_x_parameter(sq)
-        # print("Langton's parameter (before update):", x)
+        print("Langton's parameter (before update):", x)
 
         method_func(sq)
-        # print("After updating rule table:")
-        # print("Rule set:", self.rule_set)
+        print("After updating rule table:")
+        print("Rule set:", self.rule_set)
         return x
-
-    def get_item(self, i):
-        """ Retrieve item from rule set"""
-        return self.rule_set[i]
 
     def get_rule_size(self):
         """Calculate neighborhood size. """
@@ -183,11 +180,35 @@ class TableWalkThrough(CASim):
             lambda_prime = self.__walk_through__(method_func, sq)
         return self.rule_set
 
+
+class SimRunner(self):
+    def __init__(self, n):
+        self.sim = GUI(CASim)
+        self.rule_builder = TableWalkThrough()
+
+    def __simulation_init__(self):
+        self.transient_lens = []
+        self.seen = {}
+
+    def __run_simulations__(self):
+        r = np.arange(0.10, 1.01, 0.10)
+        for t in r: 
+            self.sim.rule_set = self.rule_builder.walk_through('increase', t)
+            self.sim.reset()
+            trasient_len = self.run_simulation()
+            self.trasient_lens.append(trasient_len)
+
+    def run_simulations(self):
+        transient_len = 0
+        while True:
+            self.sim.step()
+            transient_len += 1
+            self.seen[self.sim.t] = self.sim.config[t]
+        return transient_len
+
 if __name__ == '__main__':
     sim = CASim()
     from pyics import GUI
     cx = GUI(sim)
 
     cx.start()
-    #table = TableWalkThrough()
-    #table.walk_through('increase', 0.5)
