@@ -105,7 +105,6 @@ class CASim(Model):
             values = self.config[self.t - 1, indices]
             self.config[self.t, patch] = self.check_rule(values)
 
-
 class TableWalkThrough(CASim):
     def __init__(self):
         CASim.__init__(self)
@@ -189,6 +188,6 @@ if __name__ == '__main__':
     from pyics import GUI
     cx = GUI(sim)
 
-    # cx.start()
-    table = TableWalkThrough()
-    table.walk_through('increase', 0.5)
+    cx.start()
+    #table = TableWalkThrough()
+    #table.walk_through('increase', 0.5)
