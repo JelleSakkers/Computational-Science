@@ -108,6 +108,8 @@ class TableWalkThrough(CASim):
         CASim.__init__(self)
 
         self.rule_set = np.zeros(self.get_rule_size())
+        self.lambda_prime = 0
+        self.sq = None
 
     def __select_method__(self, method='increase'):
         """Select the grow method of Langton's parameter."""
@@ -119,17 +121,16 @@ class TableWalkThrough(CASim):
             method_func = self.decrease_x
         return method_func
 
-    def __walk_through__(self, method_func, sq):
+    def __walk_through__(self):
         """Intermediate steps."""
-        # print("Before walk-through:")
-        # print("Initial rule set:", self.rule_set)
+        print("Before walk-through:")
+        print("Initial rule set:", self.rule_set)
 
-        x = self.calculate_x_parameter(sq)
-        # print("Langton's parameter (before update):", x)
+        x = self.calculate_x_parameter()
+        print("Langton's parameter (before update):", x)
 
-        method_func(sq)
-        # print("After updating rule table:")
-        # print("Rule set:", self.rule_set)
+        print("After updating rule table:")
+        print("Rule set:", self.rule_set)
         return x
 
     def get_rule_size(self):
@@ -140,41 +141,39 @@ class TableWalkThrough(CASim):
         """Choose a quiescent state randomly."""
         return np.random.choice(range(self.k))
 
-    def count_transitions_to_state(self, sq):
+    def count_transitions_to_state(self):
         """Count transitions to the specified state in the rule set."""
-        return np.count_nonzero(self.rule_set == sq)
+        return np.count_nonzero(self.rule_set == self.sq)
 
-    def calculate_x_parameter(self, sq):
+    def calculate_x_parameter(self):
         """Calculate the Langto's parameter based on the count
         of transitions to the quiescent state."""
         k = self.get_rule_size()
-        n = self.count_transitions_to_state(sq)
+        n = self.count_transitions_to_state(self.sq)
         return (k - n) / k
 
-    def increase_x(self, sq):
+    def increase_x(self):
         """Increase X: Replace transitions to Sq with transitions to other states."""
-        i = np.random.choice(np.where(self.rule_set == sq)[0], size=1)
-        self.rule_set[i] = np.random.choice(np.delete(range(self.k), sq), size=len(i))
+        i = np.random.choice(np.where(self.rule_set == self.sq)[0], size=1)
+        self.rule_set[i] = np.random.choice(np.delete(range(self.k), self.sq), size=len(i))
 
-    def decrease_x(self, sq):
+    def decrease_x(self):
         """Decrease X: Replace transitions not to Sq with transitions to Sq."""
-        i = np.random.choice(np.where(range(self.k) != sq)[0], size=1)
-        self.rule_set[i] = sq
+        i = np.random.choice(np.where(range(self.k) != self.sq)[0], size=1)
+        self.rule_set[i] = self.sq
 
-    def build_initial_rule_set_to_sq(self, sq):
+    def build_initial_rule_set_to_sq(self):
         """Build an initial rule set with transitions entirely to the quiescent state,
         and start by building ro sq."""
-        self.rule_set = np.full(self.get_rule_size(), sq, dtype=int)
+        self.sq = self.get_quiescent_state()
+        self.rule_set = np.full(self.get_rule_size(), self.sq, dtype=int)
 
-    def walk_through(self, method, t):
+    def walk_through(self, t):
         """Perform the table walk-through method to update the transition tables."""
-        method_func = self.__select_method__(method)
-        sq = self.get_quiescent_state()
-        self.build_initial_rule_set_to_sq(sq)
-        lambda_prime = 0
-
-        while lambda_prime < t:
-            lambda_prime = self.__walk_through__(method_func, sq)
+        if self.lambda_prime < t:
+            self.lambda_prime = increase_x()
+        else:
+            self.lambda_prime = decrease_x()
         return self.rule_set
 
 
