@@ -206,7 +206,6 @@ def run_simulatios(simulator, rule_builder):
             seen[key] = simulator.config[simulator.t]
             simulator.step()
             transient_len += 1
-
         return transient_len
 
     def hash_key(config):
