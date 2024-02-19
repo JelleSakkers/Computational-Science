@@ -26,14 +26,14 @@ class CASim(Model):
         self.rule_set = []
         self.config = None
 
-        self.table_builder = TableWalkThrough(0.60, self)
-
         self.make_param('r', 2)
         self.make_param('k', 4)
         self.make_param('width', 128)
         self.make_param('height', 200)
         self.make_param('rule', 30, setter=self.setter_rule)
-
+ 
+        self.rule_builder = TableWalkThrough(0.60, self.r, self.k)
+    
     def setter_rule(self, val):
         """Setter for the rule parameter, clipping its value between 0 and the
         maximum possible rule number."""
@@ -107,15 +107,17 @@ class CASim(Model):
         self.table_builder.walk_through()
 
 
-class TableWalkThrough(CASim):
-    def __init__(self, t):
-        CASim.__init__(self)
-        
+class TableWalkThrough():
+    def __init__(self, t, r, k):   
         self.rule_set = np.zeros(self.get_rule_size())
+        
         self.lambda_prime = 0
         self.sq = None
+        
         self.t = t
-
+        self.k = k
+        self.r = r
+    
     def __select_method__(self, method='increase'):
         """Select the grow method of Langton's parameter."""
         method_func = self.increase_x
@@ -177,9 +179,10 @@ class TableWalkThrough(CASim):
     def walk_through(self):
         """Perform the table walk-through method to update the transition tables."""
         if self.lambda_prime < self.t:
-            self.lambda_prime = self.increase_x()
+            self.increase_x()
         else:
-            self.lambda_prime = self.decrease_x()
+            self.decrease_x()
+        self.lambda_prime = calculate_x_parameter()
         return self.rule_set
 
 
