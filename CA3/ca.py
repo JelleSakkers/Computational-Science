@@ -180,7 +180,7 @@ class TableWalkThrough(CASim):
             lambda_prime = self.__walk_through__(method_func, sq)
         return self.rule_set
 
-def run_simulatios(simulator, rule_builder):
+def run_simulations(simulator, rule_builder):
     """
     Run simulations using the specified simulator and rule_builder.
     """
