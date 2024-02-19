@@ -26,6 +26,8 @@ class CASim(Model):
         self.rule_set = []
         self.config = None
 
+        self.table_builder = TableWalkThrough(0.60, self)
+
         self.make_param('r', 2)
         self.make_param('k', 4)
         self.make_param('width', 128)
@@ -46,10 +48,10 @@ class CASim(Model):
         For example, for rule=34, k=3, r=1 this function should set rule_set to
         [0, ..., 0, 1, 0, 2, 1] (length 27). This means that for example
         [2, 2, 2] -> 0 and [0, 0, 1] -> 2."""
-        rule_set_size = self.k ** (2 * self.r + 1)
+        # rule_set_size = self.k ** (2 * self.r + 1)
         # conv = decimal_to_base_k(self.rule, self.k)
         # self.rule_set = [0] * (rule_set_size - len(conv)) + conv
-        self.rule_set = TableWalkThrough().walk_through('increase', 0.45)
+        self.rule_set = self.table_builder.build_initial_rule_set_to_sq()
 
     def check_rule(self, inp):
         """Returns the new state based on the input states."""
@@ -101,15 +103,18 @@ class CASim(Model):
                     for i in range(patch - self.r, patch + self.r + 1)]
             values = self.config[self.t - 1, indices]
             self.config[self.t, patch] = self.check_rule(values)
+        
+        self.table_builder.walk_through()
 
 
 class TableWalkThrough(CASim):
-    def __init__(self):
+    def __init__(self, t):
         CASim.__init__(self)
-
+        
         self.rule_set = np.zeros(self.get_rule_size())
         self.lambda_prime = 0
         self.sq = None
+        self.t = t
 
     def __select_method__(self, method='increase'):
         """Select the grow method of Langton's parameter."""
@@ -167,13 +172,14 @@ class TableWalkThrough(CASim):
         and start by building ro sq."""
         self.sq = self.get_quiescent_state()
         self.rule_set = np.full(self.get_rule_size(), self.sq, dtype=int)
+        return self.rule_set
 
-    def walk_through(self, t):
+    def walk_through(self):
         """Perform the table walk-through method to update the transition tables."""
-        if self.lambda_prime < t:
-            self.lambda_prime = increase_x()
+        if self.lambda_prime < self.t:
+            self.lambda_prime = self.increase_x()
         else:
-            self.lambda_prime = decrease_x()
+            self.lambda_prime = self.decrease_x()
         return self.rule_set
 
 
@@ -233,8 +239,6 @@ def run_simulations(simulator, rule_builder):
 
 if __name__ == '__main__':
     sim = CASim()
-    rule_builder = TableWalkThrough()
-
     from pyics import GUI
     cx = GUI(sim)
 
