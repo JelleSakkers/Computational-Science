@@ -124,15 +124,15 @@ class TableWalkThrough(CASim):
 
     def __walk_through__(self, method_func, sq):
         """Intermediate steps."""
-        # print("Before walk-through:")
-        # print("Initial rule set:", self.rule_set)
+        print("Before walk-through:")
+        print("Initial rule set:", self.rule_set)
 
         x = self.calculate_x_parameter(sq)
-        # print("Langton's parameter (before update):", x)
+        print("Langton's parameter (before update):", x)
 
         method_func(sq)
-        # print("After updating rule table:")
-        # print("Rule set:", self.rule_set)
+        print("After updating rule table:")
+        print("Rule set:", self.rule_set)
         return x
 
     def get_rule_size(self):
@@ -180,52 +180,62 @@ class TableWalkThrough(CASim):
             lambda_prime = self.__walk_through__(method_func, sq)
         return self.rule_set
 
+def run_simulatios(simulator, rule_builder):
+    """
+    Run simulations using the specified simulator and rule_builder.
+    """
+    def initialize_simulation():
+        """
+        Initialize transient_lens and seen dictionaries.
+        """
+        transient_lens = []
+        seen = {}
+        return transient_lens, seen
 
-class SimRunner():
-    def __init__(self):
-        self.sim = CASim()
-        self.rule_builder = TableWalkThrough()
-
-    def __simulation_init__(self):
-        self.transient_lens = []
-        self.seen = {}
-    
-    def __run_simulations__(self):
-        self.__simulation_init__()
+    def simulate():
+        """
+        Run the simulation and track transient lengths.
+        """
+        transient_lens, seen = initialize_simulation()
         transient_len = 0
 
-        for _ in range(self.sim.height):
-            key = self.config_key(self.sim.config[self.sim.t])
-            if key in self.seen:
+        for _ in range(simulator.height):
+            key = hash_key(simulator.config[simulator.t])
+            if key in seen:
                 break
-            self.seen[key] = self.sim.config[self.sim.t]
-            self.sim.step()
+            seen[key] = simulator.config[simulator.t]
+            simulator.step()
+            transient_len += 1
+
         return transient_len
 
-    def __plot__(self):
-        pass
-
-    def hash_key(self, config):
-        """Converts the NumPy array to a hashable type."""
+    def hash_key(config):
+        """
+        Convert the NumPy array to a hashable byte representation.
+        """
         return config.tobytes()
-    
-    def dehash_key(self. config):
-        return int.from_bytes(config, byteorder='big')
-    
-    def stastics(self):
-        pass
 
-    def run_simulations(self):
-        r = np.arange(0.10, 1.01, 0.10)
-        self.sim.height = 10 ** 4
-        for t in [0.10]:
-            self.sim.rule_set = self.rule_builder.walk_through('increase', t)
-            self.sim.reset()
-            transient_len = self.__run_simulations__()
-            self.transient_lens.append(transient_len)
-    
-    def plot_simulations(self):
-        pass
+    def dehash_key(config):
+        """
+        Convert a byte representation of data to an integer.
+        """
+        return int.from_bytes(config, byteorder='big')
+
+    # Set up simulation parameters
+    simulation_range = np.arange(0.10, 1.01, 0.10)
+    simulator.height = 10 ** 4
+
+    transient_lengths = []
+
+    # Run simulations for specified range
+    for threshold in [0.10]:
+        simulator.rule_set = rule_builder.walk_through('increase', threshold)
+        simulator.reset()
+        transient_len = simulate()
+        transient_lengths.append(transient_len)
+    return transient_lengths 
+
+
 
 if __name__ == '__main__':
     sim = CASim()
