@@ -202,41 +202,44 @@ def run_simulations(simulator, rule_builder):
         for _ in range(simulator.height):
             key = hash_key(simulator.config[simulator.t])
             if key in seen:
+                transient_len = self.seen[key]
                 break
-            seen[key] = simulator.config[simulator.t]
+            seen[key] = simulator.t
             simulator.step()
-            transient_len += 1
         return transient_len
 
     def hash_key(config):
         """
-        Convert the NumPy array to a hashable byte representation.
+        Convert the NumPy array to a hashable representation.
         """
-        return config.tobytes()
+        return tuple(config)
 
     def dehash_key(config):
         """
         Convert a byte representation of data to an integer.
         """
-        return int.from_bytes(config, byteorder='big')
+        return np.array(list(config))
 
     # Set up simulation parameters
-    simulation_range = np.arange(0.10, 1.01, 0.10)
+    simulation_range = np.arange(0.10, 1.01, 0.125)
     simulator.height = 10 ** 4
 
-    transient_lengths = []
+    transient_lens = []
 
     # Run simulations for specified range
-    for threshold in [0.10]:
+    for threshold in [0.5]:
         simulator.rule_set = rule_builder.walk_through('increase', threshold)
         simulator.reset()
         transient_len = simulate()
-        transient_lengths.append(transient_len)
-    return transient_lengths 
+        transient_lens.append(transient_len)
+    return transient_lens 
 
 if __name__ == '__main__':
     sim = CASim()
+    rule_builder = TableWalkThrough()
+
     from pyics import GUI
     cx = GUI(sim)
 
-    cx.start()
+    print(run_simulations(sim, rule_builder))
+
