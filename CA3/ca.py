@@ -234,15 +234,9 @@ def run_simulatios(simulator, rule_builder):
         transient_lengths.append(transient_len)
     return transient_lengths 
 
-
-
 if __name__ == '__main__':
     sim = CASim()
     from pyics import GUI
     cx = GUI(sim)
 
-    # cx.start()
-
-    simRunner = SimRunner()
-    simRunner.run_simulations()
-
+    cx.start()
