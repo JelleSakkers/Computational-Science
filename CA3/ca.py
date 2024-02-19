@@ -26,10 +26,10 @@ class CASim(Model):
         self.rule_set = []
         self.config = None
 
-        self.make_param('r', 1)
-        self.make_param('k', 2)
-        self.make_param('width', 50)
-        self.make_param('height', 50)
+        self.make_param('r', 2)
+        self.make_param('k', 4)
+        self.make_param('width', 128)
+        self.make_param('height', 200)
         self.make_param('rule', 30, setter=self.setter_rule)
 
     def setter_rule(self, val):
@@ -47,15 +47,12 @@ class CASim(Model):
         [0, ..., 0, 1, 0, 2, 1] (length 27). This means that for example
         [2, 2, 2] -> 0 and [0, 0, 1] -> 2."""
         rule_set_size = self.k ** (2 * self.r + 1)
-        conv = decimal_to_base_k(self.rule, self.k)
-        self.rule_set = [0] * (rule_set_size - len(conv)) + conv
+        # conv = decimal_to_base_k(self.rule, self.k)
+        # self.rule_set = [0] * (rule_set_size - len(conv)) + conv
+        self.rule_set = TableWalkThrough().walk_through('increase', 0.45)
 
     def check_rule(self, inp):
-        """Returns the new state b
-        ased on the input states.
-
-        The input state will be an array of 2r+1 items between 0 and k, the
-        neighbourhood which the state of the new cell depends on."""
+        """Returns the new state based on the input states."""
         i = sum(inp[i] * (self.k ** i) for i in range(len(inp)))
         return self.rule_set[-(1 + int(i))]
 
@@ -124,15 +121,15 @@ class TableWalkThrough(CASim):
 
     def __walk_through__(self, method_func, sq):
         """Intermediate steps."""
-        print("Before walk-through:")
-        print("Initial rule set:", self.rule_set)
+        # print("Before walk-through:")
+        # print("Initial rule set:", self.rule_set)
 
         x = self.calculate_x_parameter(sq)
-        print("Langton's parameter (before update):", x)
+        # print("Langton's parameter (before update):", x)
 
         method_func(sq)
-        print("After updating rule table:")
-        print("Rule set:", self.rule_set)
+        # print("After updating rule table:")
+        # print("Rule set:", self.rule_set)
         return x
 
     def get_rule_size(self):
@@ -180,6 +177,7 @@ class TableWalkThrough(CASim):
             lambda_prime = self.__walk_through__(method_func, sq)
         return self.rule_set
 
+
 def run_simulations(simulator, rule_builder):
     """
     Run simulations using the specified simulator and rule_builder.
@@ -202,7 +200,7 @@ def run_simulations(simulator, rule_builder):
         for _ in range(simulator.height):
             key = hash_key(simulator.config[simulator.t])
             if key in seen:
-                transient_len = self.seen[key]
+                transient_len = seen[key]
                 break
             seen[key] = simulator.t
             simulator.step()
@@ -214,25 +212,25 @@ def run_simulations(simulator, rule_builder):
         """
         return tuple(config)
 
-    def dehash_key(config):
+    def unhash_key(config):
         """
         Convert a byte representation of data to an integer.
         """
         return np.array(list(config))
 
     # Set up simulation parameters
-    simulation_range = np.arange(0.10, 1.01, 0.125)
+    simulation_range = np.arange(0.10, 1.0, 0.125)
     simulator.height = 10 ** 4
 
     transient_lens = []
 
     # Run simulations for specified range
-    for threshold in [0.5]:
+    for threshold in simulation_range:
         simulator.rule_set = rule_builder.walk_through('increase', threshold)
         simulator.reset()
         transient_len = simulate()
         transient_lens.append(transient_len)
-    return transient_lens 
+    return transient_lens
 
 if __name__ == '__main__':
     sim = CASim()
@@ -241,5 +239,7 @@ if __name__ == '__main__':
     from pyics import GUI
     cx = GUI(sim)
 
-    print(run_simulations(sim, rule_builder))
+    cx.start()
+
+    # print(run_simulations(sim, rule_builder))
 
