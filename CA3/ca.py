@@ -30,11 +30,9 @@ class CASim(Model):
         self.make_param('k', 4)
         self.make_param('width', 128)
         self.make_param('height', 200)
-        self.make_param('lambda_prime', 0.20)
+        self.make_param('lambda_', 0.20)
         self.make_param('rule', 30, setter=self.setter_rule)
-
-        self.rule_builder = TableWalkThrough(self.lambda_prime, self.r, self.k)
-    
+ 
     def setter_rule(self, val):
         """Setter for the rule parameter, clipping its value between 0 and the
         maximum possible rule number."""
@@ -52,6 +50,7 @@ class CASim(Model):
         # rule_set_size = self.k ** (2 * self.r + 1)
         # conv = decimal_to_base_k(self.rule, self.k)
         # self.rule_set = [0] * (rule_set_size - len(conv)) + conv
+        self.rule_builder = TableWalkThrough(self.lambda_, self.r, self.k)
         self.rule_set = self.rule_builder.walk_through()
 
     def check_rule(self, inp):
@@ -116,27 +115,25 @@ class TableWalkThrough():
         
         self.rule_set = np.zeros(self.get_rule_size())
     
-    def __select_method__(self, method='increase'):
-        """Select the grow method of Langton's parameter."""
-        method_func = self.increase_x
-
-        if method == "increase":
-            method_func = self.increase_x
-        elif method == "decrease":
-            method_func = self.decrease_x
-        return method_func
-
     def __walk_through__(self):
         """Intermediate steps."""
-        print("Before walk-through:")
-        print("Initial rule set:", self.rule_set)
-
         x = self.calculate_x_parameter()
-        print("Langton's parameter (before update):", x)
-
-        print("After updating rule table:")
-        print("Rule set:", self.rule_set)
+        if x < self.t:
+            self.increase_x()
+        else:
+            self.decrease_x()
         return x
+        
+    def set_t(self, new_t):
+        """Set the value of self.t."""
+        self.t = new_t
+        self.reset_rule_set()
+
+    def reset_rule_set(self):
+        """Clear the rule_set."""
+        self.rule_set = np.zeros(self.get_rule_size())
+        self.lambda_prime = 0
+        self.sq = None
 
     def get_rule_size(self):
         """Calculate neighborhood size. """
@@ -176,16 +173,12 @@ class TableWalkThrough():
 
     def walk_through(self):
         """Perform the table walk-through method to update the transition tables."""
-        if self.lambda_prime < self.t:
-            self.increase_x()
-        elif self.lambda_prime > self.t:
-            self.decrease_x()
-        else:
-            return self.rule_set
-        self.lambda_prime = self.calculate_x_parameter()
+        self.build_initial_rule_set_to_sq()
+        while self.lambda_prime < self.t:
+            self.lambda_prime = self.__walk_through__()
+        return self.rule_set
 
-
-def run_simulations(simulator, rule_builder):
+def run_simulations(simulator, num_simulations=10):
     """
     Run simulations using the specified simulator and rule_builder.
     """
@@ -193,25 +186,35 @@ def run_simulations(simulator, rule_builder):
         """
         Initialize transient_lens and seen dictionaries.
         """
-        transient_lens = []
-        seen = {}
-        return transient_lens, seen
+        rule_builder = TableWalkThrough(0.0, 2, 4)
+        simulator_range = np.arange(0.10, 1.01, 0.10)
+        simulator.height = 10 ** 4
+        return rule_builder, simulator_range
 
     def simulate():
         """
         Run the simulation and track transient lengths.
         """
-        transient_lens, seen = initialize_simulation()
-        transient_len = 0
+        transient_lengths = []
 
-        for _ in range(simulator.height):
-            key = hash_key(simulator.config[simulator.t])
-            if key in seen:
-                transient_len = seen[key]
-                break
-            seen[key] = simulator.t
-            simulator.step()
-        return transient_len
+        for _ in range(100):
+            seen = {}
+            transient_len = 0
+
+            for _ in range(simulator.height):
+                key = hash_key(simulator.config[simulator.t])
+                if key in seen:
+                    transient_len = seen[key]
+                    break
+                seen[key] = simulator.t
+                simulator.step()
+            
+            transient_lengths.append(transient_len)
+            simulator.reset()
+
+        # Calculate the average transient length
+        average_transient_len = np.mean(transient_lengths)
+        return average_transient_len
 
     def hash_key(config):
         """
@@ -226,25 +229,33 @@ def run_simulations(simulator, rule_builder):
         return np.array(list(config))
 
     # Set up simulation parameters
-    simulation_range = np.arange(0.10, 1.0, 0.125)
-    simulator.height = 10 ** 4
-
+    builder, simulator_range = initialize_simulation()
     transient_lens = []
 
     # Run simulations for specified range
-    for threshold in simulation_range:
-        simulator.rule_set = rule_builder.walk_through('increase', threshold)
+    for lambda_prime in simulator_range:
+        builder.set_t(lambda_prime)
+        simulator.rule_set = builder.walk_through()
         simulator.reset()
-        transient_len = simulate()
-        transient_lens.append(transient_len)
+        average_transient_len = simulate()
+        transient_lens.append(average_transient_len)
+
+    plt.plot(simulator_range, transient_lens, linewidth=0.5, label='Transient Lengths')
+    plt.scatter(simulator_range, transient_lens, color='red', marker='s', label='Actual Points')
+    plt.xlabel('$λ$')
+    plt.ylabel('$transient length$')
+    plt.title("Average Transient Length")
+    plt.legend()
+    plt.show()
     return transient_lens
+
 
 if __name__ == '__main__':
     sim = CASim()
     from pyics import GUI
     cx = GUI(sim)
 
-    cx.start()
+    # cx.start()
 
-    # print(run_simulations(sim, rule_builder))
+    print(run_simulations(sim))
 
