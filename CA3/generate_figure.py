@@ -1,32 +1,59 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from ca import TableWalkThrough
 
-def run_experiments():
-    k_value = 2
-    r_value = 1
-    num_experiments = 100
+from ca import TableWalkThrough, CASim
 
-    table_walker = TableWalkThrough()
-    
-    entropies = []
 
-    for _ in range(num_experiments):
-        initial_rule_set = table_walker.build_initial_rule_set_to_sq()
-        table_walker.rule_set = initial_rule_set
+def run_simulations(simulator, rule_builder):
+    """
+    Run simulations using the specified simulator and rule_builder.
+    """
+    def initialize_simulation():
+        """
+        Initialize transient_lens and seen dictionaries.
+        """
+        transient_lens = []
+        seen = {}
+        return transient_lens, seen
 
-        table_walker.table_walk_through()
+    def simulate():
+        """
+        Run the simulation and track transient lengths.
+        """
+        transient_lens, seen = initialize_simulation()
+        transient_len = 0
 
-        entropy = table_walker.shannon_entropy()
-        entropies.append(entropy)
+        for _ in range(simulator.height):
+            key = hash_key(simulator.config[simulator.t])
+            if key in seen:
+                transient_len = seen[key]
+                break
+            seen[key] = simulator.t
+            simulator.step()
+        return transient_len
 
-    # Plot the results
-    plt.hist(entropies, bins=20, color='skyblue', edgecolor='black')
-    plt.title('Distribution of Shannon Information Entropy')
-    plt.xlabel('Entropy')
-    plt.ylabel('Frequency')
-    plt.show()
+    def hash_key(config):
+        """
+        Convert the NumPy array to a hashable representation.
+        """
+        return tuple(config)
 
-if __name__ == '__main__':
-    run_experiments()
+    def unhash_key(config):
+        """
+        Convert a byte representation of data to an integer.
+        """
+        return np.array(list(config))
 
+    # Set up simulation parameters
+    simulation_range = np.arange(0.10, 1.0, 0.125)
+    simulator.height = 10 ** 4
+
+    transient_lens = []
+
+    # Run simulations for specified range
+    for threshold in simulation_range:
+        simulator.rule_set = rule_builder.walk_through(threshold)
+        simulator.reset()
+        transient_len = simulate()
+        transient_lens.append(transient_len)
+    return transient_lens

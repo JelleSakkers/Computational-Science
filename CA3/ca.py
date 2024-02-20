@@ -30,9 +30,10 @@ class CASim(Model):
         self.make_param('k', 4)
         self.make_param('width', 128)
         self.make_param('height', 200)
+        self.make_param('lambda_prime', 0.20)
         self.make_param('rule', 30, setter=self.setter_rule)
- 
-        self.rule_builder = TableWalkThrough(0.60, self.r, self.k)
+
+        self.rule_builder = TableWalkThrough(self.lambda_prime, self.r, self.k)
     
     def setter_rule(self, val):
         """Setter for the rule parameter, clipping its value between 0 and the
@@ -51,7 +52,7 @@ class CASim(Model):
         # rule_set_size = self.k ** (2 * self.r + 1)
         # conv = decimal_to_base_k(self.rule, self.k)
         # self.rule_set = [0] * (rule_set_size - len(conv)) + conv
-        self.rule_set = self.table_builder.build_initial_rule_set_to_sq()
+        self.rule_set = self.rule_builder.walk_through()
 
     def check_rule(self, inp):
         """Returns the new state based on the input states."""
@@ -103,20 +104,17 @@ class CASim(Model):
                     for i in range(patch - self.r, patch + self.r + 1)]
             values = self.config[self.t - 1, indices]
             self.config[self.t, patch] = self.check_rule(values)
-        
-        self.table_builder.walk_through()
-
 
 class TableWalkThrough():
     def __init__(self, t, r, k):   
-        self.rule_set = np.zeros(self.get_rule_size())
-        
         self.lambda_prime = 0
-        self.sq = None
+        self.sq = None 
         
         self.t = t
         self.k = k
-        self.r = r
+        self.r = r 
+        
+        self.rule_set = np.zeros(self.get_rule_size())
     
     def __select_method__(self, method='increase'):
         """Select the grow method of Langton's parameter."""
@@ -156,7 +154,7 @@ class TableWalkThrough():
         """Calculate the Langto's parameter based on the count
         of transitions to the quiescent state."""
         k = self.get_rule_size()
-        n = self.count_transitions_to_state(self.sq)
+        n = self.count_transitions_to_state()
         return (k - n) / k
 
     def increase_x(self):
@@ -180,10 +178,11 @@ class TableWalkThrough():
         """Perform the table walk-through method to update the transition tables."""
         if self.lambda_prime < self.t:
             self.increase_x()
-        else:
+        elif self.lambda_prime > self.t:
             self.decrease_x()
-        self.lambda_prime = calculate_x_parameter()
-        return self.rule_set
+        else:
+            return self.rule_set
+        self.lambda_prime = self.calculate_x_parameter()
 
 
 def run_simulations(simulator, rule_builder):
