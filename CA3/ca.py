@@ -187,7 +187,7 @@ def run_simulations(simulator, num_simulations=10):
         Initialize transient_lens and seen dictionaries.
         """
         rule_builder = TableWalkThrough(0.0, 2, 4)
-        simulator_range = np.arange(0.10, 1.01, 0.10)
+        simulator_range = np.arange(0.0, 1.01, 0.10)
         simulator.height = 10 ** 4
         return rule_builder, simulator_range
 
@@ -197,7 +197,7 @@ def run_simulations(simulator, num_simulations=10):
         """
         transient_lengths = []
 
-        for _ in range(100):
+        for _ in range(1000):
             seen = {}
             transient_len = 0
 
@@ -228,11 +228,9 @@ def run_simulations(simulator, num_simulations=10):
         """
         return np.array(list(config))
 
-    # Set up simulation parameters
     builder, simulator_range = initialize_simulation()
     transient_lens = []
 
-    # Run simulations for specified range
     for lambda_prime in simulator_range:
         builder.set_t(lambda_prime)
         simulator.rule_set = builder.walk_through()
@@ -241,9 +239,9 @@ def run_simulations(simulator, num_simulations=10):
         transient_lens.append(average_transient_len)
 
     plt.plot(simulator_range, transient_lens, linewidth=0.5, label='Transient Lengths')
-    plt.scatter(simulator_range, transient_lens, color='red', marker='s', label='Actual Points')
+    plt.scatter(simulator_range, transient_lens, color='red', marker='s', label='Points')
     plt.xlabel('$λ$')
-    plt.ylabel('$transient length$')
+    plt.ylabel('$transient\ length$')
     plt.title("Average Transient Length")
     plt.legend()
     plt.show()
@@ -255,7 +253,7 @@ if __name__ == '__main__':
     from pyics import GUI
     cx = GUI(sim)
 
-    # cx.start()
+    cx.start()
 
-    print(run_simulations(sim))
+    # print(run_simulations(sim))
 
