@@ -4,13 +4,24 @@ import matplotlib.pyplot as plt
 from pyics import Model
 
 
-memory = []
 rewards = {'CC':(3, 3), 'CD':(0, 5), 'DC':(5, 0), 'DD':(1, 1)}
+
+mem = ['CCCCCC', 'CCCCCD', 'CCCCDC', 'CCCCDD', 'CCCDCC', 'CCCDCD',
+              'CCCDDC', 'CCCDDD', 'CCDCCC', 'CCDCCD', 'CCDCDC', 'CCDCDD',
+              'CCDDCC', 'CCDDCD', 'CCDDDC', 'CCDDDD', 'CDCCCC', 'CDCCCD',
+              'CDCCDC', 'CDCCDD', 'CDCDCC', 'CDCDCD', 'CDCDDC', 'CDCDDD',
+              'CDDCCC', 'CDDCCD', 'CDDCDC', 'CDDCDD', 'CDDDCC', 'CDDDCD',
+              'CDDDDC', 'CDDDDD', 'DCCCCC', 'DCCCCD', 'DCCCDC', 'DCCCDD',
+              'DCCDCC', 'DCCDCD', 'DCCDDC', 'DCCDDD', 'DCDCCC', 'DCDCCD',
+              'DCDCDC', 'DCDCDD', 'DCDDCC', 'DCDDCD', 'DCDDDC', 'DCDDDD',
+              'DDCCCC', 'DDCCCD', 'DDCCDC', 'DDCCDD', 'DDCDCC', 'DDCDCD',
+              'DDCDDC', 'DDCDDD', 'DDDCCC', 'DDDCCD', 'DDDCDC', 'DDDCDD',
+              'DDDDCC', 'DDDDCD', 'DDDDDC', 'DDDDDD']
 
 
 class Individual():
     def __init__(self, mutation_prob):
-        
+        pass 
 
     def fitness():
         pass
@@ -19,7 +30,6 @@ class Individual():
 class Population(CAsim):
     def __init__(self, 
                  generations=None,
-                 strategy=None,
                  population_size=None,
                  crossover_prob=None,
                  mutation_prob=None):
@@ -28,12 +38,19 @@ class Population(CAsim):
         
         self.generations = generations
         self.pop_size = population_size
-        self.strategy = strategy
         self.crossover_prob = crossover_prob
         self.mutation_prob = mutation_prob
 
+        self.pop = []
+
     def initialize_pop(self):
-        pass
+        genes = ['C', 'D']
+        chromosome = ''
+
+        for x in range(self.pop):
+            chromosome += random.choice(genes)
+            self.pop += [chromosome]
+            chromosome = ''
 
     def grade_fitness(self):
         pass
@@ -45,6 +62,9 @@ class Population(CAsim):
         pass
 
     def evolve(self):
+        pass
+
+    def prisoners_dilemma():
         pass
 
 
