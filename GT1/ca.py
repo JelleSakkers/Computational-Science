@@ -5,7 +5,11 @@ import matplotlib.pyplot as plt
 from pyics import Model
 
 
+# Payoff Matrix for Prisoner's Dilemma
 rewards = {'CC':(3, 3), 'CD':(0, 5), 'DC':(5, 0), 'DD':(1, 1)}
+
+# First two letters are the decisions made by player a and b three
+# games ago. The second two letters are decisions two games ago, etcetera.
 mem = ['CCCCCC', 'CCCCCD', 'CCCCDC', 'CCCCDD', 'CCCDCC', 'CCCDCD',
        'CCCDDC', 'CCCDDD', 'CCDCCC', 'CCDCCD', 'CCDCDC', 'CCDCDD',
        'CCDDCC', 'CCDDCD', 'CCDDDC', 'CCDDDD', 'CDCCCC', 'CDCCCD'
@@ -35,14 +39,16 @@ class Individual():
 
 
 class Population(CAsim):
-    def __init__(self, 
+    def __init__(self,
+                 seq_len=None
                  generations=None,
                  population_size=None,
                  crossover_prob=None,
                  mutation_prob=None):
         
         CASim.__init__(self)
-        
+       
+        sel.seq_len = seq_len
         self.generations = generations
         self.pop_size = population_size
         self.crossover_prob = crossover_prob
@@ -56,13 +62,13 @@ class Population(CAsim):
 
         for i in range(self.pop_size):
             person = Individual()
-            for j in range(self.generations)
+            for j in range(self.seq_len)
                 chromosome = random.choice(genes)
                 person.set_chromosome(chromosome)
             self.pop += [person] 
             chromosome = ''
 
-    def grade_fitness(self):
+    def get_fitness(self):
         pass
 
     def crossover(self):
@@ -71,9 +77,12 @@ class Population(CAsim):
     def evolve(self):
         pass
 
-    def prisoners_dilemma():
+    def run_prisoners_dilemma():
         pass
 
+    def run_tournament():
+        pass
+    
 
 class CASim(Model):
     def __init__(self):
