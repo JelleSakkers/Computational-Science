@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 from pyics import Model
 
 
-# Payoff Matrix for Prisoner's Dilemma
+# payoff matrix for Prisoner's Dilemma
 rewards = {'CC':(3, 3), 'CD':(0, 5), 'DC':(5, 0), 'DD':(1, 1)}
 
-# First two letters are the decisions made by player a and b three
+# first two letters are the decisions made by player a and b three
 # games ago. The second two letters are decisions two games ago, etcetera.
 mem = ['CCCCCC', 'CCCCCD', 'CCCCDC', 'CCCCDD', 'CCCDCC', 'CCCDCD',
        'CCCDDC', 'CCCDDD', 'CCDCCC', 'CCDCCD', 'CCDCDC', 'CCDCDD',
