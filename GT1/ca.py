@@ -47,7 +47,7 @@ class Population(CAsim):
         genes = ['C', 'D']
         chromosome = ''
 
-        for x in range(self.pop_size):
+        for _ in range(self.pop_size):
             chromosome += random.choice(genes)
             self.pop += [chromosome]
             chromosome = ''
