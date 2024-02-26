@@ -18,7 +18,16 @@ def decimal_to_base_k(n, k):
     return res[::-1]
 
 
-class GeneticCA(CAsim):
+
+class Individual():
+    def __init__(self, mutation_prob):
+        pass
+
+    def fitness():
+        pass
+
+
+class Population(CAsim):
     def __init__(self, 
                  generations=None,
                  strategy=None,
@@ -35,18 +44,19 @@ class GeneticCA(CAsim):
         self.mutation_prob = mutation_prob
 
     def _initialize_pop(self):
-        pop = []
-
-        for i in range(self.pop_size):
-            pop_val = []
-
-    def _fitness_calc(self):
         pass
 
-    def _crossover(self, parentA, parentB):
+    def grade_fitness(self):
         pass
 
+    def crossover(self):
+        pass
 
+    def breed(self):
+        pass
+
+    def evolve(self):
+        pass
 
 
 class CASim(Model):
