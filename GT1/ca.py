@@ -57,7 +57,7 @@ class Population(CAsim):
         for i in range(self.pop_size):
             person = Individual()
             for j in range(self.generations)
-                chromosome += random.choice(genes)
+                chromosome = random.choice(genes)
                 person.set_chromosome(chromosome)
             self.pop += [person] 
             chromosome = ''
