@@ -45,6 +45,7 @@ class GeneticCA(CAsim):
     def __initialize_population__(self):
         pass
 
+
 class CASim(Model):
     def __init__(self):
         Model.__init__(self)
