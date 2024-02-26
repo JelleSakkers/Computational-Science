@@ -4,22 +4,9 @@ import matplotlib.pyplot as plt
 from pyics import Model
 
 
-def decimal_to_base_k(n, k):
-    """Converts a given decimal (i.e. base-10 integer) to a list containing the
-    base-k equivalant.
-
-    For example, for n=34 and k=3 this function should return [1, 0, 2, 1]."""
-    if n == 0:
-        return [0]
-    res = []
-    while n:
-        res += [int(n % k)]
-        n //= k
-    return res[::-1]
-
-
 memory = []
 rewards = {'CC':(3, 3), 'CD':(0, 5), 'DC':(5, 0), 'DD':(1, 1)}
+
 
 class Individual():
     def __init__(self, mutation_prob):
