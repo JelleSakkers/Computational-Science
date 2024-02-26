@@ -7,16 +7,16 @@ from pyics import Model
 
 rewards = {'CC':(3, 3), 'CD':(0, 5), 'DC':(5, 0), 'DD':(1, 1)}
 mem = ['CCCCCC', 'CCCCCD', 'CCCCDC', 'CCCCDD', 'CCCDCC', 'CCCDCD',
-              'CCCDDC', 'CCCDDD', 'CCDCCC', 'CCDCCD', 'CCDCDC', 'CCDCDD',
-              'CCDDCC', 'CCDDCD', 'CCDDDC', 'CCDDDD', 'CDCCCC', 'CDCCCD',
-              'CDCCDC', 'CDCCDD', 'CDCDCC', 'CDCDCD', 'CDCDDC', 'CDCDDD',
-              'CDDCCC', 'CDDCCD', 'CDDCDC', 'CDDCDD', 'CDDDCC', 'CDDDCD',
-              'CDDDDC', 'CDDDDD', 'DCCCCC', 'DCCCCD', 'DCCCDC', 'DCCCDD',
-              'DCCDCC', 'DCCDCD', 'DCCDDC', 'DCCDDD', 'DCDCCC', 'DCDCCD',
-              'DCDCDC', 'DCDCDD', 'DCDDCC', 'DCDDCD', 'DCDDDC', 'DCDDDD',
-              'DDCCCC', 'DDCCCD', 'DDCCDC', 'DDCCDD', 'DDCDCC', 'DDCDCD',
-              'DDCDDC', 'DDCDDD', 'DDDCCC', 'DDDCCD', 'DDDCDC', 'DDDCDD',
-              'DDDDCC', 'DDDDCD', 'DDDDDC', 'DDDDDD']
+       'CCCDDC', 'CCCDDD', 'CCDCCC', 'CCDCCD', 'CCDCDC', 'CCDCDD',
+       'CCDDCC', 'CCDDCD', 'CCDDDC', 'CCDDDD', 'CDCCCC', 'CDCCCD'
+       'CDCCDC', 'CDCCDD', 'CDCDCC', 'CDCDCD', 'CDCDDC', 'CDCDDD',
+       'CDDCCC', 'CDDCCD', 'CDDCDC', 'CDDCDD', 'CDDDCC', 'CDDDCD',
+       'CDDDDC', 'CDDDDD', 'DCCCCC', 'DCCCCD', 'DCCCDC', 'DCCCDD',
+       'DCCDCC', 'DCCDCD', 'DCCDDC', 'DCCDDD', 'DCDCCC', 'DCDCCD',
+       'DCDCDC', 'DCDCDD', 'DCDDCC', 'DCDDCD', 'DCDDDC', 'DCDDDD',
+       'DDCCCC', 'DDCCCD', 'DDCCDC', 'DDCCDD', 'DDCDCC', 'DDCDCD',
+       'DDCDDC', 'DDCDDD', 'DDDCCC', 'DDDCCD', 'DDDCDC', 'DDDCDD',
+       'DDDDCC', 'DDDDCD', 'DDDDDC', 'DDDDDD']
 
 
 class Individual():
