@@ -44,8 +44,7 @@ class Population(CAsim):
                  generations=None,
                  population_size=None,
                  crossover_prob=None,
-                 mutation_prob=None):
-        
+                 mutation_prob=None): 
         CASim.__init__(self)
        
         sel.seq_len = seq_len
