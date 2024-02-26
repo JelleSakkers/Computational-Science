@@ -18,32 +18,21 @@ def decimal_to_base_k(n, k):
     return res[::-1]
 
 
-class Player:
-    def __init__(self, rule_table, k):
-        self.rule_table = rule_table
-        self.k = k
-        self.genes = None
-        self.fitness = 0
-
-    def do_crossover(self, other):
-        pass
-
-    def do_mutation(self):
-        pass
-
-    def calculate_fitness(self):
-        pass
-
-
 class GeneticCA(CAsim):
-    def __init__(self, size, crossover_r, mutation_r):
+    def __init__(self, 
+                 generations=None,
+                 strategy=None,
+                 population_size=None,
+                 crossover_prob=None,
+                 mutation_prob=None):
+        
         CASim.__init__(self)
-
-    def __initialize_population_params__(self):
-        self.size = size
-        self.crossover_r = crossover_r
-        self.mutation_r = mutation_r
-        self.population = []
+        
+        self.generations = generations
+        self.pop_size = population_size
+        self.strategy = strategy
+        self.crossover_prob = crossover_prob
+        self.mutation_prob = mutation_prob
 
     def __initialize_population__(self):
         pass
