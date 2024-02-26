@@ -60,9 +60,6 @@ class Population(CAsim):
     def crossover(self):
         pass
 
-    def breed(self):
-        pass
-
     def evolve(self):
         pass
 
