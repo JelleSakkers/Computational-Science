@@ -36,12 +36,15 @@ class Player:
 
 
 class GeneticCA(CAsim):
-    def __init__(self):
+    def __init__(self, size, crossover_r, mutation_r):
         CASim.__init__(self)
 
     def __initialize_population_params__(self):
-        pass
-    
+        self.size = size
+        self.crossover_r = crossover_r
+        self.mutation_r = mutation_r
+        self.population = []
+
     def __initialize_population__(self):
         pass
 
