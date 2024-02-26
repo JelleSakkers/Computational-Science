@@ -18,10 +18,12 @@ def decimal_to_base_k(n, k):
     return res[::-1]
 
 
+memory = []
+rewards = {'CC':(3, 3), 'CD':(0, 5), 'DC':(5, 0), 'DD':(1, 1)}
 
 class Individual():
     def __init__(self, mutation_prob):
-        pass
+        
 
     def fitness():
         pass
@@ -43,7 +45,7 @@ class Population(CAsim):
         self.crossover_prob = crossover_prob
         self.mutation_prob = mutation_prob
 
-    def _initialize_pop(self):
+    def initialize_pop(self):
         pass
 
     def grade_fitness(self):
