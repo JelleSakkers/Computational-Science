@@ -22,13 +22,13 @@ mem = ['CCCCCC', 'CCCCCD', 'CCCCDC', 'CCCCDD', 'CCCDCC', 'CCCDCD',
 class Individual():
     def __init__(self):
         self.points = 0
-        self.chromosome = None
+        self.chromosome = ''
 
     def set_points(self, other):
         self.points = other
 
     def set_chromosome(self, other):
-        self.chromosome = other
+        self.chromosome += other
 
     def fitness():
         pass
@@ -54,10 +54,11 @@ class Population(CAsim):
         genes = ['C', 'D']
         chromosome = ''
 
-        for _ in range(self.pop_size):
+        for i in range(self.pop_size):
             person = Individual()
-            chromosome += random.choice(genes)
-            person.set_chromosome(chromosome)
+            for j in range(self.generations)
+                chromosome += random.choice(genes)
+                person.set_chromosome(chromosome)
             self.pop += [person] 
             chromosome = ''
 
