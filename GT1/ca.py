@@ -22,6 +22,7 @@ mem = ['CCCCCC', 'CCCCCD', 'CCCCDC', 'CCCCDD', 'CCCDCC', 'CCCDCD',
 class Individual():
     def __init__(self):
         self.points = 0
+        self.chromosome = None
 
     def fitness():
         pass
@@ -48,8 +49,9 @@ class Population(CAsim):
         chromosome = ''
 
         for _ in range(self.pop_size):
+            # create Individuals
             chromosome += random.choice(genes)
-            self.pop += [chromosome]
+            self.pop += [] 
             chromosome = ''
 
     def grade_fitness(self):
