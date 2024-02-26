@@ -24,6 +24,12 @@ class Individual():
         self.points = 0
         self.chromosome = None
 
+    def set_points(self, other):
+        self.points = other
+
+    def set_chromosome(self, other):
+        self.chromosome = other
+
     def fitness():
         pass
 
@@ -49,9 +55,10 @@ class Population(CAsim):
         chromosome = ''
 
         for _ in range(self.pop_size):
-            # create Individuals
+            person = Individual()
             chromosome += random.choice(genes)
-            self.pop += [] 
+            person.set_chromosome(chromosome)
+            self.pop += [person] 
             chromosome = ''
 
     def grade_fitness(self):
