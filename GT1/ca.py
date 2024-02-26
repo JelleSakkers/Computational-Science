@@ -34,8 +34,19 @@ class GeneticCA(CAsim):
         self.crossover_prob = crossover_prob
         self.mutation_prob = mutation_prob
 
-    def __initialize_population__(self):
+    def _initialize_pop(self):
+        pop = []
+
+        for i in range(self.pop_size):
+            pop_val = []
+
+    def _fitness_calc(self):
         pass
+
+    def _crossover(self, parentA, parentB):
+        pass
+
+
 
 
 class CASim(Model):
