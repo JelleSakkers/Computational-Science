@@ -8,9 +8,13 @@ def decimal_to_base_k(n, k):
     base-k equivalant.
 
     For example, for n=34 and k=3 this function should return [1, 0, 2, 1]."""
-
-    pass
-
+    if n == 0:
+        return [0]
+    res = []
+    while n:
+        res += [int(n % k)]
+        n //= k
+    return res[::-1]
 
 class CASim(Model):
     def __init__(self):
