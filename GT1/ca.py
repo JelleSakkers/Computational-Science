@@ -22,6 +22,7 @@ class Player:
     def __init__(self, rule_table, k):
         self.rule_table = rule_table
         self.k = k
+        self.genes = None
         self.fitness = 0
 
     def do_crossover(self, other):
@@ -38,9 +39,11 @@ class GeneticCA(CAsim):
     def __init__(self):
         CASim.__init__(self)
 
+    def __initialize_population_params__(self):
+        pass
+    
     def __initialize_population__(self):
         pass
-
 
 class CASim(Model):
     def __init__(self):
