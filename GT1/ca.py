@@ -20,8 +20,8 @@ mem = ['CCCCCC', 'CCCCCD', 'CCCCDC', 'CCCCDD', 'CCCDCC', 'CCCDCD',
 
 
 class Individual():
-    def __init__(self, mutation_prob):
-        pass 
+    def __init__(self):
+        self.points = 0
 
     def fitness():
         pass
