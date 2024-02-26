@@ -22,6 +22,17 @@ mem = ['CCCCCC', 'CCCCCD', 'CCCCDC', 'CCCCDD', 'CCCDCC', 'CCCDCD',
        'DDCDDC', 'DDCDDD', 'DDDCCC', 'DDDCCD', 'DDDCDC', 'DDDCDD',
        'DDDDCC', 'DDDDCD', 'DDDDDC', 'DDDDDD']
 
+# nadat er een populatie is gecreerd, met elk persoon een DNA sequence lengte van 'sequence_len'
+# kunnen we evolueren. Sinds we drie beslissingen onthouden voor elke speler, dienen we voor iedere
+# DNA sequence de laatste drie chromosomen te ontrekken uit de sequence, voor zowel persoon A en B.
+# De drie chromosomen ~ characters, van persoon A en B voegen we samen. We hebben nu zes chromosomen. 
+# Nu willen we weten op welke plaats in 'mem' de string met zes chromosomen is opgeslagen (mem.index()).
+# Met deze index kunnen we één chromosoom per speler extraheren uit zijn DNA sequence. Voegen we weer - 
+# samen, hebben nu twee chromosomen. Even de 'rewards' matrix aanroepen, en we krijgen de respectievelijke
+# punten. Hierna wat lijsten verschuiven, welke? Nog geen idee..
+
+# Hierna kan de fitness worden berekent en crossover uitgevoerd worden. Al deze stappen herhalen zich dus.
+
 
 class Individual():
     def __init__(self):
