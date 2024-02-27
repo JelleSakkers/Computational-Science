@@ -43,6 +43,9 @@ class Population(CAsim):
         self.seq_len = seq_len
         self.pop_size = population_size
         self.pop = np.random.choice(['C', 'D'], size=(self.pop_size, self.seq_len))
+
+    def get_fitness(self):
+        pass
     
     def run_prisoners_dilemma(self, num_runs, num_generations):
         for i in range(num_runs):
@@ -53,7 +56,7 @@ class Population(CAsim):
                 pass
     
     def run_tournament(self):
-        points = [0] * self.pop_size
+        points = np.zeros(self.pop_size)
 
         for i in range(self.pop_size):
             for j in range(self.pop_size):
