@@ -6,7 +6,7 @@ from pyics import Model
 
 
 # payoff matrix for Prisoner's Dilemma
-rewards = {'CC':(3, 3), 'CD':(0, 5), 'DC':(5, 0), 'DD':(1, 1)}
+rewards = {'CC': (3, 3), 'CD': (0, 5), 'DC': (5, 0), 'DD': (1, 1)}
 
 # first two letters are the decisions made by player a and b three
 # games ago. The second two letters are decisions two games ago, etcetera.
@@ -30,11 +30,11 @@ class Population(CAsim):
                  population_size=None,
                  crossover_prob=None,
                  mutation_prob=None):
-        
+
         CASim.__init__(self)
         self.__initialize_prob_params__(crossover_prob, mutation_prob)
         self.__initialize_pop_params__(seq_len, population_size)
-        
+
     def __initialize_prob_params__(self, crossover_prob, mutation_prob):
         self.crossover_prob = crossover_prob
         self.mutation_prob = mutation_prob
@@ -42,11 +42,12 @@ class Population(CAsim):
     def __initialize_pop_params__(self, seq_len, population_size):
         self.seq_len = seq_len
         self.pop_size = population_size
-        self.pop = np.random.choice(['C', 'D'], size=(self.pop_size, self.seq_len))
+        self.pop = np.random.choice(
+            ['C', 'D'], size=(self.pop_size, self.seq_len))
 
     def get_fitness(self):
         pass
-    
+
     def run_prisoners_dilemma(self, num_runs, num_generations):
         for i in range(num_runs):
             # first random generations
@@ -54,19 +55,26 @@ class Population(CAsim):
             for j in range(1, num_generations):
                 # do run tournament, also extend the population
                 pass
-    
+
     def run_tournament(self):
+        def eo_against_eo():
+            """Helper function to reduce indentation level."""
+            for i in range(self.pop_size):
+                for j in range(self.pop_size):
+                    yield i, j
+
         points = np.zeros(self.pop_size)
 
-        for i in range(self.pop_size):
-            for j in range(self.pop_size):
-                mem_a = self.pop[i][64] + self.pop[j][64] + self.pop[i][65] + self.pop[j][65] + self.pop[i][66] + self.pop[j][66]
-                mem_b = self.pop[j][64] + self.pop[i][64] + self.pop[j][65] + self.pop[i][65] + self.pop[j][66] + self.pop[i][66]
-                mem_idx_a = mem.index(mem_a)
-                mem_idx_b = mem.index(mem_b)
-                outcome = rewards[mem_a[mem_idx_a] + mem_b[mem_idx_b]]
-                points[i] += outcome[0]
-                points[j] += outcome[1]
+        for i, j in eo_against_eo():
+            mem_a = self.pop[i][64] + self.pop[j][64] + self.pop[i][65] + \
+                self.pop[j][65] + self.pop[i][66] + self.pop[j][66]
+            mem_b = self.pop[j][64] + self.pop[i][64] + self.pop[j][65] + \
+                self.pop[i][65] + self.pop[j][66] + self.pop[i][66]
+            mem_idx_a = mem.index(mem_a)
+            mem_idx_b = mem.index(mem_b)
+            outcome = rewards[mem_a[mem_idx_a] + mem_b[mem_idx_b]]
+            points[i] += outcome[0]
+            points[j] += outcome[1]
         return points
 
 
@@ -132,7 +140,7 @@ class CASim(Model):
         if not plt.gca().yaxis_inverted():
             plt.gca().invert_yaxis()
         plt.imshow(self.config, interpolation='none', vmin=0, vmax=self.k - 1,
-                cmap=matplotlib.cm.binary)
+                   cmap=matplotlib.cm.binary)
         plt.axis('image')
         plt.title('t = %d' % self.t)
 
@@ -149,7 +157,7 @@ class CASim(Model):
             # Since slices do not support this, we create an array with the
             # indices we want and use that to index our grid.
             indices = [i % self.width
-                    for i in range(patch - self.r, patch + self.r + 1)]
+                       for i in range(patch - self.r, patch + self.r + 1)]
             values = self.config[self.t - 1, indices]
             self.config[self.t, patch] = self.check_rule(values)
 
