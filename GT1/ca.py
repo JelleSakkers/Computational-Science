@@ -98,7 +98,7 @@ class Population(CAsim):
                 # moves of opponent to make our decision (max 2).
                mem_a = ''.join(islice(self.pop_hist[j], 0, None, 2))
                mem_b = ''.join(islice(self.pop_hist[i], 0, None, 2))
-               assert len(mem_a) <= 2 and len(mem_b) <= 2
+               assert 0 < len(mem_a) <= 2 and 0 < len(mem_b) <= 2
                mem_idx_a = hist_to_idx[mem_a]
                mem_idx_b = hist_to_idx[mem_b]
             else:
