@@ -67,6 +67,7 @@ class Population(CAsim):
                 outcome = rewards[mem_a[mem_idx_a] + mem_b[mem_idx_b]]
                 points[i] += outcome[0]
                 points[j] += outcome[1]
+        return points
 
 
 class CASim(Model):
