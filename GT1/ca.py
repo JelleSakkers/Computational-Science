@@ -61,7 +61,7 @@ class Population(CAsim):
                 mem_b = self.pop[j][64] + self.pop[i][64] + self.pop[j][65] + self.pop[i][65] + self.pop[j][66] + self.pop[i][66]
                 mem_idx_a = mem.index(mem_a)
                 mem_idx_b = mem.index(mem_b)
-                outcome = rewards[mem_a[idx_a] + mem_b[idx_b]]
+                outcome = rewards[mem_a[mem_idx_a] + mem_b[mem_idx_b]]
                 points[i] += outcome[0]
                 points[j] += outcome[1]
 
