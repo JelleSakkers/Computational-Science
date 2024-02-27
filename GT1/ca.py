@@ -2,6 +2,8 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 
+from collections import deque
+from itertools import islice
 from pyics import Model
 
 
@@ -10,22 +12,26 @@ rewards = {'CC': (3, 3), 'CD': (0, 5), 'DC': (5, 0), 'DD': (1, 1)}
 
 # first two letters are the decisions made by player a and b three
 # games ago. The second two letters are decisions two games ago, etcetera.
-mem = ['CCCCCC', 'CCCCCD', 'CCCCDC', 'CCCCDD', 'CCCDCC', 'CCCDCD',
-       'CCCDDC', 'CCCDDD', 'CCDCCC', 'CCDCCD', 'CCDCDC', 'CCDCDD',
-       'CCDDCC', 'CCDDCD', 'CCDDDC', 'CCDDDD', 'CDCCCC', 'CDCCCD'
-       'CDCCDC', 'CDCCDD', 'CDCDCC', 'CDCDCD', 'CDCDDC', 'CDCDDD',
-       'CDDCCC', 'CDDCCD', 'CDDCDC', 'CDDCDD', 'CDDDCC', 'CDDDCD',
-       'CDDDDC', 'CDDDDD', 'DCCCCC', 'DCCCCD', 'DCCCDC', 'DCCCDD',
-       'DCCDCC', 'DCCDCD', 'DCCDDC', 'DCCDDD', 'DCDCCC', 'DCDCCD',
-       'DCDCDC', 'DCDCDD', 'DCDDCC', 'DCDDCD', 'DCDDDC', 'DCDDDD',
-       'DDCCCC', 'DDCCCD', 'DDCCDC', 'DDCCDD', 'DDCDCC', 'DDCDCD',
-       'DDCDDC', 'DDCDDD', 'DDDCCC', 'DDDCCD', 'DDDCDC', 'DDDCDD',
-       'DDDDCC', 'DDDDCD', 'DDDDDC', 'DDDDDD']
+mem = ['FM', 'C', 'D', 'CC', 'CD', 'DC', 'DD', 'CCCCCC', 'CCCCCD', 'CCCCDC',
+       'CCCCDD', 'CCCDCC', 'CCCDCD', 'CCCDDC', 'CCCDDD', 'CCDCCC', 'CCDCCD',
+       'CCDCDC', 'CCDCDD', 'CCDDCC', 'CCDDCD', 'CCDDDC', 'CCDDDD', 'CDCCCC',
+       'CDCCCD', 'CDCCDC', 'CDCCDD', 'CDCDCC', 'CDCDCD', 'CDCDDC', 'CDCDDD',
+       'CDDCCC', 'CDDCCD', 'CDDCDC', 'CDDCDD', 'CDDDCC', 'CDDDCD', 'CDDDDC',
+       'CDDDDD', 'DCCCCC', 'DCCCCD', 'DCCCDC', 'DCCCDD', 'DCCDCC', 'DCCDCD',
+       'DCCDDC', 'DCCDDD', 'DCDCCC', 'DCDCCD', 'DCDCDC', 'DCDCDD', 'DCDDCC',
+       'DCDDCD', 'DCDDDC', 'DCDDDD', 'DDCCCC', 'DDCCCD', 'DDCCDC', 'DDCCDD',
+       'DDCDCC', 'DDCDCD', 'DDCDDC', 'DDCDDD', 'DDDCCC', 'DDDCCD', 'DDDCDC',
+       'DDDCDD', 'DDDDCC', 'DDDDCD', 'DDDDDC', 'DDDDDD']
+
+# input string will map to an index value in constant time.
+hist_to_idx = dict(((y, x) for (x, y) in enumerate(mem)))
 
 
 class Population(CAsim):
     def __init__(self,
-                 seq_len=67,
+                 seq_len=71,
+                 hist_len=6,
+                 rounds=50,
                  generations=None,
                  population_size=None,
                  crossover_prob=None,
@@ -33,16 +39,22 @@ class Population(CAsim):
 
         CASim.__init__(self)
         self.__initialize_prob_params__(crossover_prob, mutation_prob)
-        self.__initialize_pop_params__(seq_len, population_size)
+        self.__initialize_chrom_params__(seq_len, hist_len, rounds,
+                                         population_size)
 
     def __initialize_prob_params__(self, crossover_prob, mutation_prob):
         self.crossover_prob = crossover_prob
         self.mutation_prob = mutation_prob
 
-    def __initialize_pop_params__(self, seq_len, population_size):
+    def __initialize_chrom_params__(self, seq_len, hist_len, rounds,
+                                    population_size):
         self.seq_len = seq_len
+        self.hist_len = hist_len
+        self.rounds = rounds
         self.pop_size = population_size
-        self.pop = np.random.choice(
+        self.pop_hist = [deque(maxlen=self.hist_len)
+                         for _ in range(self.pop_size)]
+        self.chrom = np.random.choice(
             ['C', 'D'], size=(self.pop_size, self.seq_len))
 
     def get_fitness(self):
@@ -61,18 +73,47 @@ class Population(CAsim):
             """Helper function to reduce indentation level."""
             for i in range(self.pop_size):
                 for j in range(self.pop_size):
-                    yield i, j
+                    for n in range(self.rounds):
+                        yield i, j, n
 
         points = np.zeros(self.pop_size)
 
-        for i, j in eo_against_eo():
-            mem_a = self.pop[i][64] + self.pop[j][64] + self.pop[i][65] + \
-                self.pop[j][65] + self.pop[i][66] + self.pop[j][66]
-            mem_b = self.pop[j][64] + self.pop[i][64] + self.pop[j][65] + \
-                self.pop[i][65] + self.pop[j][66] + self.pop[i][66]
-            mem_idx_a = mem.index(mem_a)
-            mem_idx_b = mem.index(mem_b)
-            outcome = rewards[mem_a[mem_idx_a] + mem_b[mem_idx_b]]
+        for i, j, n in eo_against_eo():
+            def add_choices_to_history(choice_a, choice_b):
+                """Add the current choices to the end of the queue."""
+                # Add first choice to queue.
+                self.pop_hist[i].append(choice_a)
+                # Place opponent choice after our own.
+                self.pop_hist[i].append(choice_b)
+                # Do the same for the other player.
+                self.pop_hist[j].append(choice_b)
+                self.pop_hist[j].append(choice_b)
+
+            if n == 0:
+                # If n is zero, we are making a first move.
+                mem_a = 'FM'
+                mem_idx_b = mem_idx_a = hist_to_idx[mem_a]
+            elif n < 3:
+                # If we have less then 3 rounds of history we only look at the
+                # moves of opponent to make our decision (max 2).
+               mem_a = ''.join(islice(self.pop_hist[j], 0, None, 2))
+               mem_b = ''.join(islice(self.pop_hist[i], 0, None, 2))
+               assert len(mem_a) <= 2 and len(mem_b) <= 2
+               mem_idx_a = hist_to_idx[mem_a]
+               mem_idx_b = hist_to_idx[mem_b]
+            else:
+                # We have at least three rounds, we only have to convert the
+                # queue to a string.
+                mem_a = ''.join(self.pop_hist[i])
+                mem_b = ''.join(self.pop_hist[j])
+                assert len(mem_a) == 6 and len(mem_b) == 6
+                mem_idx_a = hist_to_idx[mem_a]
+                mem_idx_b = hist_to_idx[mem_b]
+
+            choice_a = self.chrom[i, mem_idx_a]
+            choice_b = self.chrom[j, mem_idx_b]
+            add_choices_to_history(choice_a, choice_b)
+            outcome = rewards[choice_a + choice_b]
             points[i] += outcome[0]
             points[j] += outcome[1]
         return points
