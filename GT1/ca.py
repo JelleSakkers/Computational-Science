@@ -25,46 +25,46 @@ mem = ['CCCCCC', 'CCCCCD', 'CCCCDC', 'CCCCDD', 'CCCDCC', 'CCCDCD',
 
 class Population(CAsim):
     def __init__(self,
-                 seq_len=None
+                 seq_len=67,
                  generations=None,
                  population_size=None,
                  crossover_prob=None,
-                 mutation_prob=None): 
+                 mutation_prob=None):
+        
         CASim.__init__(self)
-       
-        sel.seq_len = seq_len
-        self.generations = generations
-        self.pop_size = population_size
+        self.__initialize_prob_params__(crossover_prob, mutation_prob)
+        self.__initialize_pop_params__(seq_len, population_size)
+        
+    def __initialize_prob_params__(self, crossover_prob, mutation_prob):
         self.crossover_prob = crossover_prob
         self.mutation_prob = mutation_prob
 
-        self.pop = []
-
-    def initialize_pop(self):
-        genes = ['C', 'D']
-        chromosome = ''
+    def __initialize_pop_params__(self, seq_len, population_size):
+        self.seq_len = seq_len
+        self.pop_size = population_size
+        self.pop = np.random.choice(['C', 'D'], size=(self.pop_size, self.seq_len))
+    
+    def run_prisoners_dilemma(self, num_runs, num_generations):
+        for i in range(num_runs):
+            # first random generations
+            pass
+            for j in range(1, num_generations):
+                # do run tournament, also extend the population
+                pass
+    
+    def run_tournament(self):
+        points = [0] * self.pop_size
 
         for i in range(self.pop_size):
-            for j in range(self.seq_len)
-                chromosome += random.choice(genes)
-            self.pop += [chromosome] 
-            chromosome = ''
+            for j in range(self.pop_size):
+                mem_a = self.pop[i][64] + self.pop[j][64] + self.pop[i][65] + self.pop[j][65] + self.pop[i][66] + self.pop[j][66]
+                mem_b = self.pop[j][64] + self.pop[i][64] + self.pop[j][65] + self.pop[i][65] + self.pop[j][66] + self.pop[i][66]
+                mem_idx_a = mem.index(mem_a)
+                mem_idx_b = mem.index(mem_b)
+                outcome = rewards[mem_a[idx_a] + mem_b[idx_b]]
+                points[i] += outcome[0]
+                points[j] += outcome[1]
 
-    def get_fitness(self):
-        pass
-
-    def crossover(self):
-        pass
-
-    def evolve(self):
-        pass
-
-    def run_prisoners_dilemma():
-        pass
-
-    def run_tournament():
-        pass
-    
 
 class CASim(Model):
     def __init__(self):
@@ -79,7 +79,7 @@ class CASim(Model):
         self.make_param('width', 128)
         self.make_param('height', 200)
         self.make_param('rule', 30, setter=self.setter_rule)
- 
+
     def setter_rule(self, val):
         """Setter for the rule parameter, clipping its value between 0 and the
         maximum possible rule number."""
