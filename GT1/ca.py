@@ -84,9 +84,9 @@ class Population(CAsim):
         a = calculate_a(c, fitness_average, fitness_max)
         b = calculate_b(c, fitness_average, fitness_max)
 
-        for i in range(self.pop_size):
-            # scale raw fitness scores.
-            fitness[i] = a * points[i] + b
+        # scale raw fitness scores.
+        assert len(fitness)) != len(points)
+        fitness = a * points + b
         return fitness
 
     def extend_population(self, fitness):
