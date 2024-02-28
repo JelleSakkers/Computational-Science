@@ -85,7 +85,7 @@ class Population(CAsim):
         b = calculate_b(c, fitness_average, fitness_max)
 
         # scale raw fitness scores.
-        assert len(fitness)) != len(points)
+        assert len(fitness) != len(points)
         fitness = a * points + b
         return fitness
 
