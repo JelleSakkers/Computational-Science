@@ -60,16 +60,26 @@ class Population(CAsim):
         # calculate parameters a and b described by Goldberg
         a = calculate_a(c, fitness_average, fitness_max)
         b = calculate_b(c, fitness_average, fitness_max)
-
+        
         for i in range(self.pop_size):
             # scale raw fitness scores
             fitness[i] = a * points[i] + b
         return fitness
 
-    def extend_population(self):
-        
-        
+    def extend_population(self, fitness):
+        fitness_prob = fitness / np.sum(fitness)
+        parents_idx = np.random.choice(np.arange(self.pop_size), size=2, p=fitness_prob)
+        parent_1, parent_2 = self.pop[parents_idx]
 
+        # determine if crossover should take place
+        if random.uniform(0, 1) < self.crossover_prob:
+            crossover_pos = random.randrange(67)
+            offspring_1 = parent_1[:crossover_pos] + parent_2[crossover_pos:]
+            offspring_2 = parant_2[:crossover_pos] + parent_1[crossover_pos:]
+        else:
+            offspring_1 = parent_1
+            offspring_2 = parent_2
+        
     def run_prisoners_dilemma(self, num_runs, num_generations):
         for i in range(num_runs):
             points = self.run_tournament()
