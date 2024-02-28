@@ -45,15 +45,37 @@ class Population(CAsim):
         self.pop = np.random.choice(
             ['C', 'D'], size=(self.pop_size, self.seq_len))
 
-    def get_fitness(self):
-        pass
+    def get_fitness(self, points, c=2):
+        fitness = np.zeros(self.pop_size)
+        
+        fitness_average = np.mean(fitness)
+        fitness_max = np.max(fitness)
+
+        def calculate_a(c, average, maximum):
+            return (c - 1) * (average / (maximum - average))
+
+        def calculate_b(c, average, maximum):
+            return average * (average - (c * average)) / (maximum - average)
+        
+        # calculate parameters a and b described by Goldberg
+        a = calculate_a(c, fitness_average, fitness_max)
+        b = calculate_b(c, fitness_average, fitness_max)
+
+        for i in range(self.pop_size):
+            # scale raw fitness scores
+            fitness[i] = a * points[i] + b
+        return fitness
+
+    def extend_population(self):
+        
+        
 
     def run_prisoners_dilemma(self, num_runs, num_generations):
         for i in range(num_runs):
-            # first random generations
-            pass
+            points = self.run_tournament()
+            fitness = self.get_fitness(points)
+
             for j in range(1, num_generations):
-                # do run tournament, also extend the population
                 pass
 
     def run_tournament(self):
