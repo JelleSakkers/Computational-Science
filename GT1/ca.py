@@ -67,9 +67,16 @@ class Population(CAsim):
         return fitness
 
     def extend_population(self, fitness):
+        new_pop = []
+        parent_1, parent_2 = '', ''
+        offspring_1, offspring_2 = '', ''
+        mutate_1, mutate_2 = '', ''
+    
         fitness_prob = fitness / np.sum(fitness)
         parents_idx = np.random.choice(np.arange(self.pop_size), size=2, p=fitness_prob)
         parent_1, parent_2 = self.pop[parents_idx]
+
+        # TO-DO: need to create a full new population
 
         # determine if crossover should take place
         if random.uniform(0, 1) < self.crossover_prob:
@@ -80,6 +87,22 @@ class Population(CAsim):
             offspring_1 = parent_1
             offspring_2 = parent_2
         
+        for a, b in zip(offspring_1, offspring_2):
+            # maybe mutate chromosome
+            if random.uniformm(0, 1) < mutation_prob:
+                if a == 'C':
+                    mutate_1 += 'D'
+                else:
+                    mutate_1 += 'C'
+            if random.uniform(0, 1) < mutation_prob:
+                if a == 'C':
+                    mutate_2 += 'D'
+                else:
+                    mutate_2 += 'C'
+        new_pop.append(mutate_1 mutate_2)
+        # Note: if n is odd, one new population member can be described at random.
+        return new_pop
+
     def run_prisoners_dilemma(self, num_runs, num_generations):
         for i in range(num_runs):
             points = self.run_tournament()
