@@ -1,6 +1,5 @@
+from typing import Callable
 import numpy as np
-import random
-import matplotlib.pyplot as plt
 
 from collections import deque, namedtuple
 from itertools import islice
@@ -32,6 +31,57 @@ hist_to_idx = dict(((y, x) for (x, y) in enumerate(mem)))
 
 
 FitnessHistory = namedtuple('FitnessHistory', ['chrom', 'fitness', 'score'])
+
+
+def play_tournament(rounds: int,
+                    make_choice_a: Callable[[int], str],
+                    make_choice_b: Callable[[int], str],
+                    player_a_proces_choices: Callable[[str, str], None],
+                    player_b_proces_choices: Callable[[str, str], None],
+                    player_a_proces_outcome: Callable[[int, int], None],
+                    player_b_proces_outcome: Callable[[int, int], None]):
+    """Play a full tournament between two players, play a given amount of
+    rounds. 'rounds' should be an integer.
+
+    Output and input for every function:
+    choice_of_x = make_choice_x(current_round)
+    player_x_proces_choices(choice_of_player_a, choice_of_player_b)
+    player_x_proces_outcome(points_to_player_a, points_to_player_b)"""
+    for n in range(np.abs(rounds)):
+        play_match(n, make_choice_a, make_choice_b, player_a_proces_choices,
+                   player_b_proces_choices, player_a_proces_outcome,
+                   player_b_proces_outcome)
+
+
+def play_match(n: int,
+               make_choice_a: Callable[[int], str],
+               make_choice_b: Callable[[int], str],
+               player_a_proces_choices: Callable[[str, str], None],
+               player_b_proces_choices: Callable[[str, str], None],
+               player_a_proces_outcome: Callable[[int, int], None],
+               player_b_proces_outcome: Callable[[int, int], None]):
+    """Play a single round of the prison game between two player.
+    All input pararmeters are functions. Two function should be provided who
+    should genereate a choice for either player. Two functions should be
+    provided to do something with the given choices (like adding it to
+    history). Lastly two functions should be provided to proces the distributed
+    points between the two players. If the current round number is important,
+    'n' should be set to useful positive integer.
+
+    Output and input for every function:
+    choice_of_x = make_choice_x(current_round)
+    player_x_proces_choices(choice_of_player_a, choice_of_player_b)
+    player_x_proces_outcome(points_to_player_a, points_to_player_b)"""
+    choice_a = make_choice_a(n)
+    choice_b = make_choice_b(n)
+
+    player_a_proces_choices(choice_a, choice_b)
+    player_b_proces_choices(choice_a, choice_b)
+
+    outcome = rewards[choice_a + choice_b]
+
+    player_a_proces_outcome(outcome[0], outcome[1])
+    player_b_proces_outcome(outcome[0], outcome[1])
 
 
 class CASim(Model):
@@ -288,17 +338,34 @@ class Population(CASim):
         points = np.zeros(self.pop_size)
 
         for i, j, n in eo_against_eo():
-            def add_choices_to_history(choice_a, choice_b):
-                """Add the current choices to the end of the queue."""
-                # Add first choice to queue.
+            def add_choices_to_history_a(choice_a, choice_b):
+                """add the current choices to the end of the queue of player
+                a on index i."""
+                # add first choice to queue.
                 self.pop_hist[i].append(choice_a)
-                # Place opponent choice after our own.
+                # place opponent choice after our own.
                 self.pop_hist[i].append(choice_b)
-                # Do the same for the other player, but if i is j it should not
+
+            def add_choices_to_history_b(choice_a, choice_b):
+                """add the current choices to the end of the queue of player
+                b on index j."""
+                # do the same for the other player, but if i is j it should not
                 # be added a second time.
                 if i != j:
                     self.pop_hist[j].append(choice_b)
-                    self.pop_hist[j].append(choice_b)
+                    self.pop_hist[j].append(choice_a)
+
+            def add_outcome_a(outcome_a, _):
+                """Add the points of a to the correct index in the array, which
+                for a is i."""
+                points[i] += outcome_a
+
+            def add_outcome_b(_, outcome_b):
+                """Add the points of b to the correct index in the array, which
+                for b is j."""
+                # Make sure not to add the points a second time (if 'i' is 'j').
+                if i != j:
+                    points[j] += outcome_b
 
             if n == 0:
                 # If n is zero, we are making a first move.
@@ -327,12 +394,13 @@ class Population(CASim):
 
             choice_a = self.chrom[i, mem_idx_a]
             choice_b = self.chrom[j, mem_idx_b]
-            add_choices_to_history(choice_a, choice_b)
-            outcome = rewards[choice_a + choice_b]
-            points[i] += outcome[0]
-            # Make sure not to add the points a second time (if 'i' is 'j').
-            if i != j:
-                points[j] += outcome[1]
+
+            # Although the current round number is provided, it won't be used
+            # inside any of the provided functions.
+            play_match(n, lambda _: choice_a, lambda _: choice_b,
+                       add_choices_to_history_a, add_choices_to_history_b,
+                       add_outcome_a,
+                       add_outcome_b)
         return points
 
     def reset(self):
