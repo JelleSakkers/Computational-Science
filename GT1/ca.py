@@ -2,13 +2,13 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 
-from collections import deque
+from collections import deque, namedtuple
 from itertools import islice
 from pyics import Model
 
 
 # Random seed constant, for verifiable results
-RNG_SEED = -89234380
+RNG_SEED = 89234380
 
 
 # payoff matrix for Prisoner's Dilemma
@@ -31,6 +31,9 @@ mem = ['FM', 'C', 'D', 'CC', 'CD', 'DC', 'DD', 'CCCCCC', 'CCCCCD', 'CCCCDC',
 hist_to_idx = dict(((y, x) for (x, y) in enumerate(mem)))
 
 
+FitnessHistory = namedtuple('FitnessHistory', ['chrom', 'fitness', 'score'])
+
+
 class CASim(Model):
     def __init__(self):
         Model.__init__(self)
@@ -39,11 +42,11 @@ class CASim(Model):
         self.rule_set = []
         self.config = None
 
-        self.make_param('r', 2)
-        self.make_param('k', 4)
-        self.make_param('width', 128)
-        self.make_param('height', 200)
-        self.make_param('rule', 30, setter=self.setter_rule)
+        # self.make_param('r', 2)
+        # self.make_param('k', 4)
+        # self.make_param('width', 128)
+        # self.make_param('height', 200)
+        # self.make_param('rule', 30, setter=self.setter_rule)
 
     def setter_rule(self, val):
         """Setter for the rule parameter, clipping its value between 0 and the
@@ -117,65 +120,91 @@ class CASim(Model):
 
 class Population(CASim):
     def __init__(self,
-                 seq_len=71,
-                 hist_len=6,
-                 rounds=1000,
-                 generations=1000,
-                 population_size=1000,
+                 rounds=50,
+                 generations=100,
+                 population_size=100,
                  crossover_prob=0.95,
                  mutation_prob=0.001):
 
         CASim.__init__(self)
+        SEQ_LEN = 71
+        HIST_LEN = 6
         self.__initialize_prob_params__(crossover_prob, mutation_prob)
         self.__initialize_match_params__(rounds, generations, population_size)
-        self.__initialize_chrom_params__(seq_len, hist_len)
+        self.__initialize_chrom_params__(SEQ_LEN, HIST_LEN)
 
     def __initialize_match_params__(self, rounds, generations,
                                     population_size):
-        self.rounds = rounds
-        self.gens = generations
-        self.pop_size = population_size
+        self.make_param('rounds', rounds)
+        self.make_param('gens', generations)
+        self.make_param('pop_size', population_size)
 
     def __initialize_prob_params__(self, crossover_prob, mutation_prob):
-        self.crossover_prob = crossover_prob
-        self.mutation_prob = mutation_prob
+        self.make_param('crossover_prob', crossover_prob,
+                        setter=self.__check_probability)
+        self.make_param('mutation_prob', mutation_prob,
+                        setter=self.__check_probability)
         self.rng = np.random.default_rng(RNG_SEED)
 
-    def __initialize_chrom_params__(self, seq_len, hist_len):
-        self.seq_len = seq_len
-        self.hist_len = hist_len
+    def __initialize_chrom_params__(self, seq_len=None, hist_len=None):
+        self.fitness_hist: list[FitnessHistory] = []
+        if seq_len is not None:
+            self.seq_len = seq_len
+        if hist_len is not None:
+            self.hist_len = hist_len
         self.pop_hist = [deque(maxlen=self.hist_len)
                          for _ in range(self.pop_size)]
-        self.chrom = np.random.choice(
+        self.__initiaize_random_chroms__()
+
+    def __initiaize_random_chroms__(self):
+        self.chrom = self.rng.choice(
             ['C', 'D'], size=(self.pop_size, self.seq_len))
+
+    def __check_probability(self, prop):
+        """Probability should be between zero and one."""
+        return max(0, min(prop, 1))
 
     def __true_by_chance(self, probability):
         return self.rng.uniform(0, 1) <= probability
 
+    def get_best_five_chromosomes(self):
+        """Return the best five scoring chromosomes in descending order."""
+        if len(self.fitness_hist) == 0:
+            return []
+        return self.fitness_hist[-1].chrom
+
     def get_fitness(self, points, c=2):
         fitness = np.zeros(self.pop_size)
 
-        fitness_average = np.mean(fitness)
-        fitness_max = np.max(fitness)
+        points_average = np.mean(points)
+        points_max = np.max(points)
 
         def calculate_a(c, average, maximum):
-            return (c - 1) * (average / (maximum - average))
+            max_av_diff = maximum - average
+            if max_av_diff != 0:
+                return (c - 1) * (average / max_av_diff)
+            else:
+                return 1
 
         def calculate_b(c, average, maximum):
-            return average * (average - (c * average)) / (maximum - average)
+            max_av_diff = maximum - average
+            if max_av_diff != 0:
+                return average * (average - (c * average)) / max_av_diff
+            else:
+                return 0
 
         # calculate parameters a and b described by Goldberg.
-        a = calculate_a(c, fitness_average, fitness_max)
-        b = calculate_b(c, fitness_average, fitness_max)
+        a = calculate_a(c, points_average, points_max)
+        b = calculate_b(c, points_average, points_max)
 
         # scale raw fitness scores.
-        assert len(fitness) != len(points)
+        assert len(fitness) == len(points)
         fitness = a * points + b
         return fitness
 
     def extend_population(self, fitness):
         # helper function to mutate a given chromosome.
-        def mutate_chromosome(chrom_str: str) -> str:
+        def mutate_chromosome(chrom_str: str) -> np.ndarray:
             """This function will mutate 'chrom_str' by copying the letters and
             by chance, invert some letters. A mutated string copy is
             returned."""
@@ -187,27 +216,39 @@ class Population(CASim):
                 else:
                     mutated_copy.append(letter)
 
-            return ''.join(mutated_copy)
+            return np.array(mutated_copy)
 
+        # Replace negative fitness results with zero.
+        fitness[fitness < 0] = 0
         fitness_prob = fitness / np.sum(fitness)
         new_pop = []
-        parent_1, parent_2 = '', ''
-        offspring_1, offspring_2 = '', ''
-        mutate_1, mutate_2 = '', ''
 
         for _ in range(int(np.ceil(self.pop_size / 2))):
-            parents_idx = np.random.choice(
-                self.pop_size, size=2, p=fitness_prob, replace=False)
-            parent_1, parent_2 = self.pop[parents_idx]
+            try:
+                parents_idx = np.random.choice(
+                    self.pop_size, size=2, p=fitness_prob, replace=False)
+            except ValueError:
+                # Sometimes, if the chromosomes are too much alike, the
+                # algorithm will stall no matter what. Any attempt to create a
+                # new generation should be disallowed.
+                self.gens = self.t
+                print('No real scores could be calculated, this means that '
+                      'all the chromosomes look to\n'
+                      'much like each other.\n'
+                      'The number of generations has been reset to the '
+                      'current time, since no more\n'
+                      'new children can be created.')
+                return self.chrom
+            parent_1, parent_2 = self.chrom[parents_idx]
 
             # determine if crossover should take place.
             if self.__true_by_chance(self.crossover_prob):
                 crossover_pos = self.rng.integers(1, self.seq_len - 1,
                                                   endpoint=False)
-                offspring_1 = parent_1[:crossover_pos] + \
-                    parent_2[crossover_pos:]
-                offspring_2 = parent_2[:crossover_pos] + \
-                    parent_1[crossover_pos:]
+                offspring_1 = np.concatenate(
+                    (parent_1[:crossover_pos], parent_2[crossover_pos:]))
+                offspring_2 = np.concatenate(
+                    (parent_2[:crossover_pos], parent_1[crossover_pos:]))
             else:
                 offspring_1 = parent_1
                 offspring_2 = parent_2
@@ -237,6 +278,10 @@ class Population(CASim):
             """Helper function to reduce indentation level."""
             for i in range(self.pop_size):
                 for j in range(self.pop_size):
+                    # Make sure for every new player match to empty all the
+                    # history queues.
+                    self.pop_hist[i].clear()
+                    self.pop_hist[j].clear()
                     for n in range(self.rounds):
                         yield i, j, n
 
@@ -249,9 +294,11 @@ class Population(CASim):
                 self.pop_hist[i].append(choice_a)
                 # Place opponent choice after our own.
                 self.pop_hist[i].append(choice_b)
-                # Do the same for the other player.
-                self.pop_hist[j].append(choice_b)
-                self.pop_hist[j].append(choice_b)
+                # Do the same for the other player, but if i is j it should not
+                # be added a second time.
+                if i != j:
+                    self.pop_hist[j].append(choice_b)
+                    self.pop_hist[j].append(choice_b)
 
             if n == 0:
                 # If n is zero, we are making a first move.
@@ -260,9 +307,13 @@ class Population(CASim):
             elif n < 3:
                 # If we have less then 3 rounds of history we only look at the
                 # moves of opponent to make our decision (max 2).
-                mem_a = ''.join(islice(self.pop_hist[j], 0, None, 2))
-                mem_b = ''.join(islice(self.pop_hist[i], 0, None, 2))
-                assert 0 < len(mem_a) <= 2 and 0 < len(mem_b) <= 2
+                mem_a = ''.join(islice(self.pop_hist[i], 1, None, 2))
+                mem_b = ''.join(islice(self.pop_hist[j], 1, None, 2))
+                assert 0 < len(mem_a) <= 2 and 0 < len(mem_b) <= 2, \
+                    f"{n = }\n" \
+                    f"{i = }\n{j = }\n" \
+                    f"{mem_a = }\n{mem_b = }\n{self.pop_hist[i] = }\n" \
+                    f"{self.pop_hist[j] = }"
                 mem_idx_a = hist_to_idx[mem_a]
                 mem_idx_b = hist_to_idx[mem_b]
             else:
@@ -279,12 +330,71 @@ class Population(CASim):
             add_choices_to_history(choice_a, choice_b)
             outcome = rewards[choice_a + choice_b]
             points[i] += outcome[0]
-            points[j] += outcome[1]
+            # Make sure not to add the points a second time (if 'i' is 'j').
+            if i != j:
+                points[j] += outcome[1]
         return points
+
+    def reset(self):
+        """Create a new set of chromosomes and reset history."""
+        self.t = 0
+        self.__initialize_chrom_params__()
+
+    def draw(self):
+        """Draw the current state of the history."""
+        # Helper function to convert raw history to a list
+        def convert_to_hist(idx):
+            t_l, fitness = [], []
+            for t, ordered_fitness in enumerate(self.fitness_hist):
+                t_l.append(t)
+                fitness.append(ordered_fitness.score[idx])
+
+            return t_l, fitness
+
+        import matplotlib.pyplot as plt
+
+        plt.cla()
+
+        # Plot top five scoring chromosomes.
+        t_l, fitness = convert_to_hist(4)
+        plt.plot(t_l, fitness, '-m', label='fifth')
+        t_l, fitness = convert_to_hist(3)
+        plt.plot(t_l, fitness, '-c', label='fourth')
+        t_l, fitness = convert_to_hist(2)
+        plt.plot(t_l, fitness, '-g', label='third')
+        t_l, fitness = convert_to_hist(1)
+        plt.plot(t_l, fitness, '-b', label='second')
+        t_l, fitness = convert_to_hist(0)
+        plt.plot(t_l, fitness, '-r', label='first')
+        plt.legend(title='Best Scoring Chromosomes')
+        plt.title('Fitness history of the best five scoring chromosomes or '
+                  'rule tables')
+
+    def step(self):
+        """Performs a single step of the simulation by advancing time and
+        applying selection to determine the new generation."""
+        self.t += 1
+        if self.t > self.gens:
+            print("The best five strategies are (in chromosome form):")
+            for chrom_list in self.get_best_five_chromosomes():
+                print(''.join(chrom_list))
+            return True
+
+        points = self.run_tournament()
+        fitness = self.get_fitness(points)
+        new_pop = self.extend_population(fitness)
+        # Find the indices of the best five scoring chromosomes.
+        best_chroms_idx = np.argsort(fitness)[:-6:-1]
+        self.fitness_hist.append(
+            FitnessHistory(self.chrom[best_chroms_idx],
+                           fitness[best_chroms_idx],
+                           points[best_chroms_idx]))
+        # Replace current generation with a new one.
+        self.chrom = new_pop
 
 
 if __name__ == '__main__':
-    sim = CASim()
+    sim = Population()
     from pyics import GUI
     cx = GUI(sim)
 
