@@ -45,8 +45,8 @@ def play_tournament(rounds: int,
 
     Output and input for every function:
     choice_of_x = make_choice_x(current_round)
-    player_x_proces_choices(choice_of_player_a, choice_of_player_b)
-    player_x_proces_outcome(points_to_player_a, points_to_player_b)"""
+    player_x_proces_choices(choice_of_player_self, choice_of_player_other)
+    player_x_proces_outcome(points_to_player_self, points_to_player_other)"""
     for n in range(np.abs(rounds)):
         play_match(n, make_choice_a, make_choice_b, player_a_proces_choices,
                    player_b_proces_choices, player_a_proces_outcome,
@@ -70,18 +70,31 @@ def play_match(n: int,
 
     Output and input for every function:
     choice_of_x = make_choice_x(current_round)
-    player_x_proces_choices(choice_of_player_a, choice_of_player_b)
-    player_x_proces_outcome(points_to_player_a, points_to_player_b)"""
-    choice_a = make_choice_a(n)
-    choice_b = make_choice_b(n)
+    player_x_proces_choices(choice_of_player_self, choice_of_player_other)
+    player_x_proces_outcome(points_to_player_self, points_to_player_other)"""
+    # Check if function are not the same reference, if it is, it should only be
+    # run once.
+    if make_choice_a is not make_choice_b:
+        choice_a = make_choice_a(n)
+        choice_b = make_choice_b(n)
+    else:
+        choice_a = choice_b = make_choice_a(n)
 
-    player_a_proces_choices(choice_a, choice_b)
-    player_b_proces_choices(choice_a, choice_b)
+    # Again, check that the functions are not the same object.
+    if player_a_proces_choices is not player_b_proces_choices:
+        player_a_proces_choices(choice_a, choice_b)
+        player_b_proces_choices(choice_b, choice_a)
+    else:
+        player_a_proces_choices(choice_a, choice_b)
 
     outcome = rewards[choice_a + choice_b]
 
-    player_a_proces_outcome(outcome[0], outcome[1])
-    player_b_proces_outcome(outcome[0], outcome[1])
+    # Again, check that the functions are not the same object.
+    if player_a_proces_outcome is not player_b_proces_outcome:
+        player_a_proces_outcome(outcome[0], outcome[1])
+        player_b_proces_outcome(outcome[1], outcome[0])
+    else:
+        player_a_proces_outcome(outcome[0], outcome[1])
 
 
 class CASim(Model):
@@ -338,34 +351,34 @@ class Population(CASim):
         points = np.zeros(self.pop_size)
 
         for i, j, n in eo_against_eo():
-            def add_choices_to_history_a(choice_a, choice_b):
+            def add_choices_to_history_a(choice_self, choice_other):
                 """add the current choices to the end of the queue of player
                 a on index i."""
-                # add first choice to queue.
-                self.pop_hist[i].append(choice_a)
+                # add our own first choice to queue.
+                self.pop_hist[i].append(choice_self)
                 # place opponent choice after our own.
-                self.pop_hist[i].append(choice_b)
+                self.pop_hist[i].append(choice_other)
 
-            def add_choices_to_history_b(choice_a, choice_b):
+            def add_choices_to_history_b(choice_self, choice_other):
                 """add the current choices to the end of the queue of player
                 b on index j."""
                 # do the same for the other player, but if i is j it should not
                 # be added a second time.
                 if i != j:
-                    self.pop_hist[j].append(choice_b)
-                    self.pop_hist[j].append(choice_a)
+                    self.pop_hist[j].append(choice_self)
+                    self.pop_hist[j].append(choice_other)
 
-            def add_outcome_a(outcome_a, _):
+            def add_outcome_a(outcome_self, _):
                 """Add the points of a to the correct index in the array, which
                 for a is i."""
-                points[i] += outcome_a
+                points[i] += outcome_self
 
-            def add_outcome_b(_, outcome_b):
+            def add_outcome_b(outcome_self, _):
                 """Add the points of b to the correct index in the array, which
                 for b is j."""
                 # Make sure not to add the points a second time (if 'i' is 'j').
                 if i != j:
-                    points[j] += outcome_b
+                    points[j] += outcome_self
 
             if n == 0:
                 # If n is zero, we are making a first move.

@@ -1,109 +1,298 @@
+from typing import Callable, Deque, Generator, List, Tuple
 from ca import RNG_SEED, play_tournament, hist_to_idx
 from collections import deque
 from itertools import islice
 import numpy as np
+from numpy.typing import NDArray
 
 BEST_FIVE_CHROMS = \
-    ['DDDDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDCCDCDCCDDDDDCDDDCCDDCDDDDCDDDDCDDDCDD',
-     'DDDDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDDCDCDCCDDDDDCDDDCCDDDDDDDCDDDDCDDDCDD',
-     'DDDDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDDCDCDCCDDDDDCDDDCCDDDDCDDCDDDDCDDDCDD',
-     'DDCDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDCCDCDCCDDDDDCDDDCCDDDDDDDCDDDDCDDDCDD',
-     'DDDDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDDCDCDCCDDDDDCDDDCCDDDDDDDCDDDDCDDDCDD']
+    ['CDDDCDCCCDDDDCCDCDDDDCDCCDCDCDCCDCCDDDDDDCCDDCDDDCDCDCDCDCDCCCDCDDDCDCC',
+     'CDDDCDCCCDDDDCCDCDDDDCDCCDCDCDCCDCCDDDDDDCCDDCDDDCDCDCDCDCDCCCDCDDDCDCC',
+     'CDCDCDCCCDDDDCCDCDDDDCDCCDCDCDCCDCCDDDDDDCCDDCCDDCDCDCDCDCDCCCDCDDDCDCC',
+     'CDCDCDCCCDDDDCCDCDDDDCDCCCCDCDCCDCCDDDDDDDCDDCCDDCDCDCDCDCDCCCDCDDDCDCC',
+     'CDCDCDCCCDDDDCCDCDDDDCDCCDCCCDCCDCCDDDDDDCCDDCCDDCDCDCDCDCDCCCDCDDDCDCC']
+# BEST_FIVE_CHROMS = \
+    # ['DDDDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDCCDCDCCDDDDDCDDDCCDDCDDDDCDDDDCDDDCDD',
+     # 'DDDDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDDCDCDCCDDDDDCDDDCCDDDDDDDCDDDDCDDDCDD',
+     # 'DDDDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDDCDCDCCDDDDDCDDDCCDDDDCDDCDDDDCDDDCDD',
+     # 'DDCDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDCCDCDCCDDDDDCDDDCCDDDDDDDCDDDDCDDDCDD',
+     # 'DDDDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDDCDCDCCDDDDDCDDDCCDDDDDDDCDDDDCDDDCDD']
 
 HIST_LEN = 6
 SEQ_LEN = 71
 
 
-def main():
-    rng = np.random.default_rng(RNG_SEED)
-    random_strategy_b = rng.choice(['C', 'D'], size=(SEQ_LEN))
+class Score():
+    """Class made purely so it is possible to get a reference to the score of
+    a specific player."""
+    def __init__(self):
+        self.score: int = 0
 
+
+Player_data = Tuple[Score, Callable[[int], str], Callable[[str, str], None],
+                    Callable[[int, int], None], Callable[[], None]]
+
+
+def create_tit_for_tat_rule_set() -> Player_data:
+    """Just repeat whatever the opponent did the previous time."""
+    opp_last_move: str = ''
+    self_score: Score = Score()
+
+    def make_choice(_: int) -> str:
+        """Repeat the opponent strategy. Initial move is positive."""
+        nonlocal opp_last_move
+        return 'C' if opp_last_move == '' else opp_last_move
+
+    def save_opp_history(_: str, move_other: str):
+        """Set the opponent's last move to 'move_other'."""
+        nonlocal opp_last_move
+        opp_last_move = move_other
+
+    def save_outcome(outcome_self: int, _: int):
+        """Save the total score."""
+        nonlocal self_score
+        self_score.score += outcome_self
+
+    def reset() -> None:
+        """Reset the score and history."""
+        nonlocal opp_last_move, self_score
+        opp_last_move = ''
+        self_score.score = 0
+
+    return self_score, make_choice, save_opp_history, save_outcome, reset
+
+
+def create_random_rule_set(seed: int) -> Player_data:
+    """Will create a proper random strategy based upon the provided seed."""
+    rng = np.random.default_rng(seed)
+    self_score: Score = Score()
+
+    def make_choice(_: int) -> str:
+        """Make a random choice."""
+        return rng.choice(['C', 'D'])
+
+    def ignore_hist(_: str, __: str):
+        """We don't need any history information."""
+        pass
+
+    def save_outcome(outcome_self: int, _: int):
+        """Saving the total score is still very useful."""
+        self_score.score += outcome_self
+
+    def reset() -> None:
+        """Reset the score and history."""
+        nonlocal self_score
+        self_score.score = 0
+
+    return self_score, make_choice, ignore_hist, save_outcome, reset
+
+
+def convert_chrom_to_rule_set(chrom: str) -> Player_data:
+    """Can convert a given chromosome string to a rule table and functions."""
+    assert len(chrom) == SEQ_LEN
+    all_hist: Deque[str] = deque(maxlen=HIST_LEN)
+    self_score: Score = Score()
+    genetic_strategy = np.array(list(chrom))
+
+    def make_choice(n: int) -> str:
+        """Mostly copied from the 'run_tournament' method inside the
+        'Population' class in the file 'ca.py'"""
+        nonlocal all_hist
+        if n == 0:
+            # If n is zero, we are making a first move.
+            mem_self = 'FM'
+            mem_idx_self = hist_to_idx[mem_self]
+        elif n < 3:
+            # If we have less then 3 rounds of history we only look at the
+            # moves of opponent to make our decision (max 2).
+            mem_self = ''.join(islice(all_hist, 1, None, 2))
+            assert 0 < len(mem_self) <= 2, f"Current round: {n}, there are " \
+                "less than three rounds of history there should be a max of " \
+                f"2 opponent moves! It currently is: {len(mem_self)}"
+            mem_idx_self = hist_to_idx[mem_self]
+        else:
+            # We have at least three rounds, we only have to convert the queue
+            # to a string.
+            mem_self = ''.join(all_hist)
+            assert len(mem_self) == 6
+            mem_idx_self = hist_to_idx[mem_self]
+
+        return genetic_strategy[mem_idx_self]
+
+    # The next couple of functions are mostly copied from 'ca.py' and modified
+    # so it works with the local variables here.
+    def add_choices_to_history(choice_self, choice_other):
+        """add the current choices to the end of the queue of player a."""
+        nonlocal all_hist
+        # add our own first choice to queue.
+        all_hist.append(choice_self)
+        # place opponent choice after our own.
+        all_hist.append(choice_other)
+
+    def add_outcome(outcome_self, _):
+        """Add the points of a to the total for player a."""
+        nonlocal self_score
+        self_score.score += outcome_self
+
+    def reset() -> None:
+        """Reset the score and history."""
+        nonlocal all_hist, self_score
+        all_hist.clear()
+        self_score.score = 0
+
+    return self_score, make_choice, add_choices_to_history, add_outcome, reset
+
+
+def convert_best_chroms_to_rule_set() -> Generator[Player_data, None, None]:
+    """Will convert the list of chromosomes to rule tables and functions."""
     for chrom in BEST_FIVE_CHROMS:
-        hist_a = deque(maxlen=HIST_LEN)
-        hist_b = deque(maxlen=HIST_LEN)
+        yield convert_chrom_to_rule_set(chrom)
 
-        points_a = points_b = 0
 
-        genetic_strategy_a = np.array(list(chrom))
+def create_defect_rule_set(defect_tolarance: float, hist_len: int) -> \
+        Player_data:
+    opp_hist: Deque[str] = deque(maxlen=hist_len)
+    self_score: Score = Score()
 
-        def make_choice_a(n):
-            """Mostly copied from the 'run_tournament' method inside the
-            'Population' class in the file 'ca.py'"""
-            if n == 0:
-                # If n is zero, we are making a first move.
-                mem_a = 'FM'
-                mem_idx_a = hist_to_idx[mem_a]
-            elif n < 3:
-                # If we have less then 3 rounds of history we only look at the
-                # moves of opponent to make our decision (max 2).
-                mem_a = ''.join(islice(hist_a, 1, None, 2))
-                assert 0 < len(mem_a) <= 2
-                mem_idx_a = hist_to_idx[mem_a]
-            else:
-                # We have at least three rounds, we only have to convert the
-                # queue to a string.
-                mem_a = ''.join(hist_a)
-                assert len(mem_a) == 6
-                mem_idx_a = hist_to_idx[mem_a]
+    def make_choice(n: int) -> str:
+        nonlocal opp_hist
+        if n == 0:
+            # Depending on how high the defect tolarance has been set, we will
+            # initially cooperate.
+            return 'C' if defect_tolarance >= 0.5 else 'D'
+        else:
+            # Check what the defect total ratio is.
+            defect_sum = np.sum(np.array(opp_hist) == 'D')
+            total_sum = len(opp_hist)
+            def_ratio: float = defect_sum / total_sum
+            # if the calculated ratio is more then the maximum allowed, we will
+            # choose to defect.
+            return 'D' if def_ratio > defect_tolarance else 'C'
 
-            return genetic_strategy_a[mem_idx_a]
+    def save_history(_: str, choice_other: str) -> None:
+        nonlocal opp_hist
+        opp_hist.append(choice_other)
 
-        def make_choice_b(n):
-            """Mostly copied from the 'run_tournament' method inside the
-            'Population' class in the file 'ca.py'"""
-            if n == 0:
-                # If n is zero, we are making a first move.
-                mem_b = 'FM'
-                mem_idx_b = hist_to_idx[mem_b]
-            elif n < 3:
-                # If we have less then 3 rounds of history we only look at the
-                # moves of opponent to make our decision (max 2).
-                mem_b = ''.join(islice(hist_b, 1, None, 2))
-                assert 0 < len(mem_b) <= 2
-                mem_idx_b = hist_to_idx[mem_b]
-            else:
-                # We have at least three rounds, we only have to convert the
-                # queue to a string.
-                mem_b = ''.join(hist_b)
-                assert len(mem_b) == 6
-                mem_idx_b = hist_to_idx[mem_b]
+    def save_score(score_self: int, _: int) -> None:
+        nonlocal self_score
+        self_score.score += score_self
 
-            return random_strategy_b[mem_idx_b]
+    def reset() -> None:
+        """Reset the score and history."""
+        nonlocal opp_hist, self_score
+        opp_hist.clear()
+        self_score.score = 0
 
-        # The next couple of functions are mostly copied from 'ca.py' and
-        # modified so it works with the local variables here.
-        def add_choices_to_history_a(choice_a, choice_b):
-            """add the current choices to the end of the queue of player a."""
-            # add our own first choice to queue.
-            hist_a.append(choice_a)
-            # place opponent choice after our own.
-            hist_a.append(choice_b)
+    return self_score, make_choice, save_history, save_score, reset
 
-        def add_choices_to_history_b(choice_a, choice_b):
-            """add the current choices to the end of the queue of player b."""
-            # add our own first choice to queue.
-            hist_b.append(choice_b)
-            # place opponent choice after our own.
-            hist_b.append(choice_a)
 
-        def add_outcome_a(outcome_a, _):
-            """Add the points of a to the total for player a."""
-            nonlocal points_a
-            points_a += outcome_a
+def create_all_players() -> Tuple[List[Player_data], List[str]]:
+    """Returns a list with all the player data, second list contains player
+    names."""
+    hist_len = 6
+    player_data: List[Player_data] = []
+    player_names: List[str] = []
 
-        def add_outcome_b(_, outcome_b):
-            """Add the points of b to the total for player b."""
-            nonlocal points_b
-            points_b += outcome_b
+    for idx, game_data in \
+            enumerate(convert_best_chroms_to_rule_set()):
+        player_names.append(f"best_gen_chrom_{idx}")
+        player_data.append(game_data)
 
-        play_tournament(1000, make_choice_a, make_choice_b,
-                        add_choices_to_history_a, add_choices_to_history_b,
-                        add_outcome_a, add_outcome_b)
+    game_data = create_defect_rule_set(1/3, hist_len)
+    player_names.append("low_defect_tolerance")
+    player_data.append(game_data)
 
-        print(  # f"Genetic chromosome:\t{chrom}\n"
-              f"Points for genetic strategy: {points_a}\n"
-              # f"Random chromosome:\t{''.join(random_strategy_b)}\n"
-              f"Points for random strategy: {points_b}")
+    game_data = create_defect_rule_set(1/2, hist_len)
+    player_names.append("mid_defect_tolerance")
+    player_data.append(game_data)
+
+    game_data = create_defect_rule_set(3/4, hist_len)
+    player_names.append("high_defect_tolerance")
+    player_data.append(game_data)
+
+    game_data = create_defect_rule_set(-1, hist_len)
+    player_names.append("always_defect")
+    player_data.append(game_data)
+
+    game_data = create_defect_rule_set(2, hist_len)
+    player_names.append("always_cooperate")
+    player_data.append(game_data)
+
+    game_data = create_random_rule_set(8914534349193759)
+    player_names.append("pure_random_choice")
+    player_data.append(game_data)
+
+    game_data = create_tit_for_tat_rule_set()
+    player_names.append("tit_for_tat")
+    player_data.append(game_data)
+
+    game_data = convert_chrom_to_rule_set(
+        'DCDCDCDDDCDCDDDCCCDCCDCCCCCCCCDCCDCCDDCDDCDCCDCCDCCDDDDCCDCCDCDDCDCDD'
+        'CC')
+    player_names.append("random_strategy_1")
+    player_data.append(game_data)
+
+    game_data = convert_chrom_to_rule_set(
+        'CDDDCDCDDDDDCCCDCDDDDDCDDCDDCCDCCDCDCCDDCCDDDDCDDDCDCDCCDDDCCCDDDDDCD'
+        'CC')
+    player_names.append("random_strategy_2")
+    player_data.append(game_data)
+
+    game_data = convert_chrom_to_rule_set(
+        'DDCCDDDCCCDCCCDDDCCCDCDCCDCCCCDCCCDDCDDCDCCDCDCDDCCDDDCDDCDDCDDDDDCDD'
+        'CC')
+    player_names.append("random_strategy_3")
+    player_data.append(game_data)
+
+    return player_data, player_names
+
+
+def all_against_all(rounds: int) -> Tuple[List[str], NDArray, NDArray]:
+    # Match everyone against everyone.
+    game_data, player_names = create_all_players()
+    players_amount: int = len(player_names)
+    matrix_type = np.dtype([('row_player', int), ('column_player', int)])
+    matrix_results = np.zeros(
+        (players_amount, players_amount), dtype=matrix_type)
+    total_results = np.zeros((players_amount), dtype=int)
+
+    for i, (score_r, choice_r, history_r, outcome_r, reset_r) in \
+            enumerate(game_data):
+        for j, (score_c, choice_c, history_c, outcome_c, reset_c) in \
+                enumerate(game_data):
+            # Play a game against each other.
+            play_tournament(rounds, choice_r, choice_c, history_r,
+                            history_c, outcome_r, outcome_c)
+            # Save outcomes both the total and the matrix version.
+            total_results[i] += score_r.score
+            total_results[j] += score_c.score
+            matrix_results[i, j] = (score_r.score, score_c.score)
+            # After a match reset both players.
+            reset_r()
+            reset_c()
+
+    # Return the results.
+    return player_names, matrix_results, total_results
+
+
+def main():
+    player_names, matrix_results, total_results = all_against_all(50)
+    best_players = np.argsort(total_results)[::-1]
+    print("Best scoring players and strategies in descending order.\n"
+          "Format is as follows: #<rank>: <player name> - <total points>\n")
+    for i, player in enumerate(best_players):
+        print(f"#{i+1:>2}: {player_names[player]:^21} - "
+              f"{total_results[player]:^4}")
+
+    print("\nThe full raw match matrix will now be saved as a text file, a "
+          "index to name conversion table will be provided below.")
+    fname: str = "matrix_results.txt"
+    np.savetxt(fname, matrix_results,
+               delimiter=",", header="(row, col)", fmt="%s")
+    # matrix_results.tofile(fname, sep=", ",format="%s")
+    print(f"Results saved as: '{fname}'.\nIndex to name mapping.\n")
+    for i, name in enumerate(player_names):
+        print(f"'{i}' is '{name}'")
 
 
 if __name__ == '__main__':
