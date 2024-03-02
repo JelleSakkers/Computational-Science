@@ -275,6 +275,21 @@ def all_against_all(rounds: int) -> Tuple[List[str], NDArray, NDArray]:
     return player_names, matrix_results, total_results
 
 
+def convert_struct_to_str(matrix: NDArray) -> NDArray:
+    """Helper function to convert a complex matrix to a simple string
+    elements."""
+    # Create an empty matrix of strings with the same shape as the original
+    # data.
+    string_matrix = np.empty(matrix.shape, dtype=np.dtype('<U20'))
+
+    # Convert each element to a string and fill the string matrix.
+    for i in range(matrix.shape[0]):
+        for j in range(matrix.shape[1]):
+            string_matrix[i, j] = str(matrix[i, j])
+
+    return string_matrix
+
+
 def main():
     player_names, matrix_results, total_results = all_against_all(50)
     best_players = np.argsort(total_results)[::-1]
@@ -286,9 +301,15 @@ def main():
 
     print("\nThe full raw match matrix will now be saved as a text file, a "
           "index to name conversion table will be provided below.")
-    fname: str = "matrix_results.txt"
-    np.savetxt(fname, matrix_results,
-               delimiter=",", header="(row, col)", fmt="%s")
+    fname: str = "matrix_results.csv"
+    rows = np.array(player_names, dtype='|S20')
+    columns = np.concatenate((['(row player, column player)'], rows))
+    # Convert data matrix to string matrix.
+    matrix_results = convert_struct_to_str(matrix_results)
+    np.savetxt(fname, np.vstack((columns[np.newaxis, :],
+                                 np.hstack((rows[:, np.newaxis],
+                                            matrix_results)))),
+               delimiter=";", fmt="%s")
     # matrix_results.tofile(fname, sep=", ",format="%s")
     print(f"Results saved as: '{fname}'.\nIndex to name mapping.\n")
     for i, name in enumerate(player_names):
