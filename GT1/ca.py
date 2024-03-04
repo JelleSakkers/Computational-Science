@@ -288,7 +288,7 @@ class Population(CASim):
 
         for _ in range(int(np.ceil(self.pop_size / 2))):
             try:
-                parents_idx = np.random.choice(
+                parents_idx = self.rng.choice(
                     self.pop_size, size=2, p=fitness_prob, replace=False)
             except ValueError:
                 # Sometimes, if the chromosomes are too much alike, the

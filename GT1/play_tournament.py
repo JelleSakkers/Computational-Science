@@ -1,22 +1,16 @@
 from typing import Callable, Deque, Generator, List, Tuple
-from ca import RNG_SEED, play_tournament, hist_to_idx
+from ca import RNG_SEED, play_tournament, hist_to_idx, rewards
 from collections import deque
 from itertools import islice
 import numpy as np
 from numpy.typing import NDArray
 
 BEST_FIVE_CHROMS = \
-    ['CDDDCDCCCDDDDCCDCDDDDCDCCDCDCDCCDCCDDDDDDCCDDCDDDCDCDCDCDCDCCCDCDDDCDCC',
-     'CDDDCDCCCDDDDCCDCDDDDCDCCDCDCDCCDCCDDDDDDCCDDCDDDCDCDCDCDCDCCCDCDDDCDCC',
-     'CDCDCDCCCDDDDCCDCDDDDCDCCDCDCDCCDCCDDDDDDCCDDCCDDCDCDCDCDCDCCCDCDDDCDCC',
-     'CDCDCDCCCDDDDCCDCDDDDCDCCCCDCDCCDCCDDDDDDDCDDCCDDCDCDCDCDCDCCCDCDDDCDCC',
-     'CDCDCDCCCDDDDCCDCDDDDCDCCDCCCDCCDCCDDDDDDCCDDCCDDCDCDCDCDCDCCCDCDDDCDCC']
-# BEST_FIVE_CHROMS = \
-    # ['DDDDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDCCDCDCCDDDDDCDDDCCDDCDDDDCDDDDCDDDCDD',
-     # 'DDDDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDDCDCDCCDDDDDCDDDCCDDDDDDDCDDDDCDDDCDD',
-     # 'DDDDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDDCDCDCCDDDDDCDDDCCDDDDCDDCDDDDCDDDCDD',
-     # 'DDCDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDCCDCDCCDDDDDCDDDCCDDDDDDDCDDDDCDDDCDD',
-     # 'DDDDCDDDDDDDDCCCDCDCDDDCCDCDDCDDDDDCDCDCCDDDDDCDDDCCDDDDDDDCDDDDCDDDCDD']
+    ['DDDDDDDCCCCDDCCDCDDCDCDDCCDCDDCDDCCDDDDDDCCDDDCDDCCCDDDCDCDCCDDCCDDCDDC',
+     'DDDDDDDCCCCDDCCDCDDCDCDDCCDCCDCCDCCDDDDDDCCDDDCDDCCCDDDCDCDCCDDCCDDCDDC',
+     'DDDDDDDCCCCDDCCDCDDCDCDDCCDCCDCCDCCDDDDDDCCDDDCDDCCCDDDCDCDCCDDCCDDCDDC',
+     'DDDDCDDCCCCDDCCDCDDCDCCDCCDCCDCCDCCDDDDDDCCDDDCDDCCCDDDCDCDCCDDCCDDCDDC',
+     'DDDDCDDCCCCDDCCDCDDCDCDDCCDCCDCCDCCDDDDDDCCDDDCDDCDCDDDCDCDCCDDCCDDCDDC']
 
 HIST_LEN = 6
 SEQ_LEN = 71
@@ -285,23 +279,18 @@ def convert_struct_to_str(matrix: NDArray) -> NDArray:
     # Convert each element to a string and fill the string matrix.
     for i in range(matrix.shape[0]):
         for j in range(matrix.shape[1]):
-            string_matrix[i, j] = str(matrix[i, j])
+            row, column = matrix[i, j]
+            string_matrix[i, j] = f"{row}, {column}"
 
     return string_matrix
 
 
-def main():
-    player_names, matrix_results, total_results = all_against_all(50)
-    best_players = np.argsort(total_results)[::-1]
-    print("Best scoring players and strategies in descending order.\n"
-          "Format is as follows: #<rank>: <player name> - <total points>\n")
+def print_best_players(best_players, player_names, total_results):
     for i, player in enumerate(best_players):
         print(f"#{i+1:>2}: {player_names[player]:^21} - "
               f"{total_results[player]:^4}")
 
-    print("\nThe full raw match matrix will now be saved as a text file, a "
-          "index to name conversion table will be provided below.")
-    fname: str = "matrix_results.csv"
+def save_result_matrix(fname, player_names, matrix_results):
     rows = np.array(player_names, dtype='|S20')
     columns = np.concatenate((['(row player, column player)'], rows))
     # Convert data matrix to string matrix.
@@ -310,8 +299,42 @@ def main():
                                  np.hstack((rows[:, np.newaxis],
                                             matrix_results)))),
                delimiter=";", fmt="%s")
-    # matrix_results.tofile(fname, sep=", ",format="%s")
-    print(f"Results saved as: '{fname}'.\nIndex to name mapping.\n")
+
+
+def main():
+    rounds: int = 50
+    player_names, matrix_results, total_results = all_against_all(rounds)
+    best_players = np.argsort(total_results)[::-1]
+    print(f"Results for default rule table and {rounds} rounds.\n\n"
+          "Best scoring players and strategies in descending order.\n"
+          "Format is as follows: #<rank>: <player name> - <total points>\n")
+    print_best_players(best_players, player_names, total_results)
+
+    print("\nThe full raw match matrix will now be saved as a text file, a "
+          "index to name conversion table will be provided below.")
+    fname: str = "matrix_results_1.csv"
+    save_result_matrix(fname, player_names, matrix_results)
+
+    # Change rule table and play less rounds.
+    rewards['CC'] = (1, 1)
+    rewards['DD'] = (5, 5)
+    rewards['CD'] = (0, 3)
+    rewards['DC'] = (3, 0)
+    rounds = 25
+    player_names, matrix_results, total_results = all_against_all(rounds)
+    best_players = np.argsort(total_results)[::-1]
+    print(f"Results saved as: '{fname}'.\n\n"
+          "A modified rule table will now be used, rounds changed to: "
+          f"{rounds}.\n"
+          "Results will now be printed, format is the same as before.\n")
+    print_best_players(best_players, player_names, total_results)
+
+    print("\nThe score matrix of this tournament will also be saved.")
+    fname: str = "matrix_results_2.csv"
+    save_result_matrix(fname, player_names, matrix_results)
+    print(f"Results saved as: '{fname}'.\n")
+
+    print("Index to name mapping.\n")
     for i, name in enumerate(player_names):
         print(f"'{i}' is '{name}'")
 
