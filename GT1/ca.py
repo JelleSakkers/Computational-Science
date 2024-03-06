@@ -1,3 +1,8 @@
+# Student Name 1: Jelle Sakkers
+# Student Number 1: 14619946
+# Student Name 2: Jeroen Bolten
+# Student Number 2: 14479257
+
 from typing import Callable
 import numpy as np
 
