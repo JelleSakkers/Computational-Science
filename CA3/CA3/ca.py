@@ -1,3 +1,10 @@
+"""
+- Naam: Jelle Sakkers
+- Vak: Computational Science
+- Studie: Bachelor Informatica
+- Datum 21-2-2024
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -197,7 +204,7 @@ def run_simulations(simulator, num_simulations=10):
         """
         transient_lengths = []
 
-        for _ in range(1000):
+        for _ in range(10):
             seen = {}
             transient_len = 0
 
@@ -254,6 +261,3 @@ if __name__ == '__main__':
     cx = GUI(sim)
 
     cx.start()
-
-    # print(run_simulations(sim))
-
