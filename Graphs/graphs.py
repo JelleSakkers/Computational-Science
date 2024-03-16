@@ -97,19 +97,17 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
         # Add sand grain to a radom stable node
         node = np.random.choice(list(bucket.keys()))
         bucket[node] += 1
-        # Search for overloaded nodes
-        unstable_nodes = [node for node, capacity in bucket.items() \
-                if capacity >= G.degree(node)]
-        # One grain of sand added to every stable neighbor
-        for node in unstable_nodes:
-            neighbors = G.neighbors(node)
-            for neighbor in neighbors:
-                if neighbor not in unstable_nodes:
-                    bucket[neighbor] += 1
-        avalanche[t] = len(unstable_nodes)
+        # Search for neighbors of current node
+        neighbors = G.neighbors(node)
+        for neighbor in neighbors:
+            bucket[neighbor] += 1
         # Fraction of sand grains lost in transfer
         bucket = {node: capacity * (1-sand_lost) \
-                for (node, capacity) in bucket.items()}
+                for (node, capacity) in bucket.items()} 
+        # Search for overloaded nodes
+        unstable_nodes = [node for node, capacity in bucket.items() \
+                if capacity >= G.degree(node)] 
+        avalanche[t] = len(unstable_nodes)
         # Remove unstable nodes from bucket
         for node in unstable_nodes:
             bucket.pop(node)
