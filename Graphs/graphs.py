@@ -84,9 +84,38 @@ def sand_avalanche(time_steps: int, sand_lost: float,
     :return:           A 1D numpy array containing the avalanches per time
                        step.
     """
-    # YOUR CODE HERE
-    return ...
+    N = 10 ** 3
+    avg_k = 2
+    p_k = 2 / N - 1
+    
+    if scalefree:
+        G = scalefree_graph(N, avg_k)
+    else:
+        G = nx.erdos_renyi_graph(N, avg_k, p_k)
+    
+    bucket_capacity = dict(G.degree)
+    avalanche_counts = np.zeros(time_steps)
 
+    for t in range(time_steps):
+        # Add a grain of sand to a random stable bucket
+        node = np.random(list(G.nodes))
+        bucket_capacity[node] += 1
+
+        # Check for toppling and distribute sand to neighbors if necessary
+        toppled_nodes = [node for node, capacity in bucket.items() \
+                if capacity >= G.degree[node]]
+        for node in topples_nodes:
+            for neighbor in G.neighbors(node):
+                if bucket.capacity[neighbor] < G.degree[neighbor]:
+                    bucket_capacity[neighbor] += 1
+
+        # Record the number of buckets that toppled during this time step
+        avalanche_counts[t] = len(toppled_nodes)
+        # Sand lost in transfer
+        lost_sand = np.random.binomial(avalanche_counts[t], sand_lost)
+        avalanche_counts[t] -= lost_sand
+    
+    return avalanche_counts
 
 def plot_avalanche_distribution(scalefree: bool, show: bool = False) -> None:
     """This function should run the simulation described in section 1.3 and
@@ -100,8 +129,16 @@ def plot_avalanche_distribution(scalefree: bool, show: bool = False) -> None:
     fig = plt.figure(figsize=(7, 5))
 
     y = sand_avalanche(10 ** 4, 10 ** -4, scalefree=scalefree)
+    unique_counts, counts = np.unique(avalanches, return_counts=True)
+    p = counts / len(avalanches)
 
-    # YOUR PLOTTING CODE HERE
+    plt.figure(figsize=(7, 5))
+    plt.loglog(unique_counts, p, 'bo', markersize=5, label='Simulated Distribution')
+    plt.xlabel('Avalanche Size $s$')
+    plt.ylabel('Probability $p$')
+    plt.title('Avalanche Distribution')
+    plt.grid(True)
+    plt.legend()
 
     # Use different filename if random or scale-free is used.
     fig.savefig(f"1-3{'b' if scalefree else 'a'}.png")
