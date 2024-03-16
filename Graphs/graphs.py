@@ -71,51 +71,48 @@ def scalefree_graph(N: int, avg_k: float, gamma: float = 2.5) -> nx.Graph:
 #########################
 
 
-def sand_avalanche(time_steps: int, sand_lost: float,
-                   scalefree: bool = False) -> np.ndarray:
-    """This function should run the simulation described in section 1.3 using a
-    random network with N = 10³ and an average <k> = 2.
+def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -> np.ndarray:
+    """
+    Simulate the sand avalanche process on a random or scale-free network.
 
-    :param time_steps: The amount of time steps to run this simulation.
-    :param sand_lost:  The fraction of sand grains lost in transfer each time
-                       step.
-    :param scalefree:  If true a scale-free graph should be used, if false a
-                       random graph should be used. Can be ignored until 1.3b.
-    :return:           A 1D numpy array containing the avalanches per time
-                       step.
+    :param time_steps: The number of time steps to simulate.
+    :param sand_lost: The fraction of sand grains lost in transfer each time step.
+    :param scalefree: If True, use a scale-free graph, otherwise use a random graph.
+    :return: A 1D numpy array containing the number of toppled buckets per time step.
     """
     N = 10 ** 3
-    avg_k = 2
-    p_k = 2 / N - 1
-    
-    if scalefree:
-        G = scalefree_graph(N, avg_k)
+    K = 2
+    Pk = K / N
+
+    if  scalefree_graph:
+        G = scalefree_graph(N, K)
     else:
-        G = nx.erdos_renyi_graph(N, avg_k, p_k)
-    
-    bucket_capacity = dict(G.degree)
-    avalanche_counts = np.zeros(time_steps)
+        G = nx.erdos_renyi_graph(N, K, Pk)
+
+    # Storage for stable nodes and their current workload
+    bucket = {i: 0 for i in range(N)}
+    avalanche = np.zeros(time_steps)
 
     for t in range(time_steps):
-        # Add a grain of sand to a random stable bucket
-        node = np.random(list(G.nodes))
-        bucket_capacity[node] += 1
+        # Add sand grain to a radom stable node
+        node = np.random.randint(N)
+        bucket[node] += 1
+        # Search for overloaded nodes
+        unstable_nodes = [node for node, capacity in bucket.items() \
+                if capacity >= G.degree(node)]
+        # One grain of sand added to every stable neighbor
+        for node in unstable_nodes:
+            neighbors = G.neighbors(node)
+            for neighbor in neighbors and neighbor not in unstable_nodes:
+                node[neighbor] += 1
+        # Remove unstable nodes from bucket
+        bucket.remove.pop(node for node in unstable_nodes)
+        avalanche[t] = len(unstable_nodes)
+        # Fraction of sand grains lost in transfer
+        bucket = {node: capacity * (1-sand_lost) \
+                for (node, capacity) in bucket.items()}
+    return avalanche
 
-        # Check for toppling and distribute sand to neighbors if necessary
-        toppled_nodes = [node for node, capacity in bucket.items() \
-                if capacity >= G.degree[node]]
-        for node in topples_nodes:
-            for neighbor in G.neighbors(node):
-                if bucket.capacity[neighbor] < G.degree[neighbor]:
-                    bucket_capacity[neighbor] += 1
-
-        # Record the number of buckets that toppled during this time step
-        avalanche_counts[t] = len(toppled_nodes)
-        # Sand lost in transfer
-        lost_sand = np.random.binomial(avalanche_counts[t], sand_lost)
-        avalanche_counts[t] -= lost_sand
-    
-    return avalanche_counts
 
 def plot_avalanche_distribution(scalefree: bool, show: bool = False) -> None:
     """This function should run the simulation described in section 1.3 and
@@ -126,14 +123,9 @@ def plot_avalanche_distribution(scalefree: bool, show: bool = False) -> None:
     :param show:      If true the plot is also shown in addition to being
                       stored as png.
     """
-    fig = plt.figure(figsize=(7, 5))
-
-    y = sand_avalanche(10 ** 4, 10 ** -4, scalefree=scalefree)
-    unique_counts, counts = np.unique(avalanches, return_counts=True)
-    p = counts / len(avalanches)
-
-    plt.figure(figsize=(7, 5))
-    plt.loglog(unique_counts, p, 'bo', markersize=5, label='Simulated Distribution')
+    # Run the simulation
+    avalanche_sizes = sand_avalanche(10 ** 4, 10 ** -4, scalefree=scalefree)
+    print(avalanche_sizes)
     plt.xlabel('Avalanche Size $s$')
     plt.ylabel('Probability $p$')
     plt.title('Avalanche Distribution')
@@ -141,7 +133,8 @@ def plot_avalanche_distribution(scalefree: bool, show: bool = False) -> None:
     plt.legend()
 
     # Use different filename if random or scale-free is used.
-    fig.savefig(f"1-3{'b' if scalefree else 'a'}.png")
+    filename = f"1-3{'b' if scalefree else 'a'}.png"
+    plt.savefig(filename)
     if show:
         plt.show()
 
