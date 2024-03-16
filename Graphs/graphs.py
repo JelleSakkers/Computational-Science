@@ -84,33 +84,36 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
     K = 2
     Pk = K / N
 
-    if  scalefree_graph:
-        G = scalefree_graph(N, K)
+    if scalefree:
+        G = nx.scale_free_graph(N, K)
     else:
-        G = nx.erdos_renyi_graph(N, K, Pk)
+        G = nx.erdos_renyi_graph(N, Pk)
 
     # Storage for stable nodes and their current workload
-    bucket = {i: 0 for i in range(N)}
+    bucket = {node: 0 for node in G.nodes()}
     avalanche = np.zeros(time_steps)
 
     for t in range(time_steps):
-        # Add sand grain to a radom stable node
+        # Add sand grain to a random stable node
         node = np.random.choice(list(bucket.keys()))
         bucket[node] += 1
-        # Search for neighbors of current node
-        neighbors = G.neighbors(node)
-        for neighbor in neighbors:
-            bucket[neighbor] += 1
+        # Check if the bucket topples
+        if bucket[node] >= G.degree(node):
+            # Topple the bucket
+            neighbors = G.neighbors(node)
+            for neighbor in neighbors:
+                bucket[neighbor] += 1
+            # Remove unstable nodes and update avalanche count
+            unstable_nodes = 0
+            for node in list(bucket.keys()):
+                if bucket[node] >= G.degree(node):
+                    # Remove unstable nodes
+                    G.remove_node(node)
+                    unstable_nodes += 1
+            avalanche[t] = unstable_nodes
         # Fraction of sand grains lost in transfer
-        bucket = {node: capacity * (1-sand_lost) \
-                for (node, capacity) in bucket.items()} 
-        # Search for overloaded nodes
-        unstable_nodes = [node for node, capacity in bucket.items() \
-                if capacity >= G.degree(node)] 
-        avalanche[t] = len(unstable_nodes)
-        # Remove unstable nodes from bucket
-        for node in unstable_nodes:
-            bucket.pop(node)
+        for node in bucket:
+            bucket[node] *= (1 - sand_lost)
     return avalanche
 
 
