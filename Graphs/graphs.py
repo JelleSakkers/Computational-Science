@@ -129,14 +129,11 @@ def plot_avalanche_distribution(scalefree: bool, bins: int = 20, show: bool = Fa
     :param show:      If true the plot is also shown in addition to being
                       stored as png.
     """
-    # Run the simulation
     avalanche_sizes = sand_avalanche(10 ** 4, 10 ** -4, scalefree=scalefree)
 
-    # Calculate probabilities from frequencies
     unique_sizes, counts = np.unique(avalanche_sizes, return_counts=True)
     probabilities = counts / len(avalanche_sizes)
  
-    # Plot
     plt.figure()
     plt.hist(avalanche_sizes, bins=bins, density=False, \
             label='Simulated Distribution', alpha=0.7)
@@ -150,7 +147,7 @@ def plot_avalanche_distribution(scalefree: bool, bins: int = 20, show: bool = Fa
     plt.yscale('log')
 
     # Use different filename if random or scale-free is used.
-    filename = f"1-3{'b' if scalefree else 'a'}_log.png"
+    filename = f"1-3{'b' if scalefree else 'a'}.png"
     plt.savefig(filename)
     if show:
         plt.show()
@@ -182,9 +179,41 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
     :return:               1D numpy array containing the amount of infected
                            nodes per time step. (So not normalised.)
     """
-    # YOUR CODE HERE
-    return ...
+    def create_network():
+        return nx.erdos_renyi_graph(N, avg_k / (N-1))
 
+    def initial_infection():
+        infected_nodes = int(start_infected * G.number_of_nodes())
+        intial_nodes = np.random.choice(G.number_of_nodes(), \
+                size=infected_nodes, replace=False)
+        for node in initial_nodes:
+            G.nodes[node]['infected'] = True
+
+    def prob(r):
+        not_infected = (1 - i) ** r
+        infected = 1 - not_infected
+        return not_infected, infected
+
+    def update_infection():
+        for node in G.nodes:
+            if 'infected' not in G.nodes[node] or not G.nodes[node]['infected']:
+                neighbors = list(G.neighbors(node))
+                infected_neighbors = sum(1 for neighbor in neighbors if \
+                        'infected' in G.nodes[neighbor] and G.nodes[neighbor]['infected'])
+                not_infected, infected = (infected_neighbors)
+                if np.random.rand() < infected:
+                    G.nodes[node]['infected'] = True
+
+    G = create_network()
+    initial_infection()
+    infected_count = np.zeros(time_steps)
+
+    for t in range(time_steps):
+        update_infection()
+        infected_count[t] = sum(1 for node in G.nodes if \
+                'infected' in G.nodes[node])
+    print(infected_count)    
+    return infected_count
 
 def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
     """This function should run the simulation described in section 2.1 with
