@@ -83,31 +83,44 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
         G = nx.scale_free_graph(N, K)
     else:
         G = nx.erdos_renyi_graph(N, Pk)
-    
 
-    bucket = np.array([G.degree[node] for node in G.nodes])
+    bucket = np.zeros(N, dtype=int)
+    degrees = np.array([G.degree[node] for node in G.nodes])
     aval = np.zeros(time_steps)
- 
+
     def random_stable_nodes():
-        return np.random.choice(np.where(bucket_sizes < G.degree)[0])
+        i = np.where(bucket < degrees)[0]
+        if len(i) == 0:
+            return None
+        return np.random.choice(i)
 
     def neighbor_stable_nodes(n):
-        return np.where(list(G.neighbors(n)) < G.degree(n))[0]
+        return [neighbor for neighbor in list(G.neighbors(n)) \
+                if bucket[neighbor] < degrees[neighbor]]
 
-    def find_toppled_buckets():
-        return np.where(bucket_sizes >= G.degree)[0]
+    def find_toppled_buckets(n):
+        toppled = 0
+        for neighbor in G.neighbors(n):
+            if bucket[neighbor] >= degrees[neighbor]:
+                toppled += 1
+        return toppled
+
+    def add_by_chance(n):
+        if rng.uniform(0, 1) > sand_lost:
+            bucket[n] += 1
 
     for t in range(time_steps):
         node = random_stable_nodes()
-        bucket[node] += 1
-        if bucket[node] >= G.degree[node]:
+        if node == None:
+            break
+        add_by_chance(node)
+        if bucket[node] >= degrees[node]:
             neighbors = neighbor_stable_nodes(node)
             for neighbor in neighbors:
-                bucket[neighbor] += 1
-            s = find_toppled_buckets()
-        aval[t] = len(s)
-        
-        return aval
+                add_by_chance(neighbor)
+        aval[t] = find_toppled_buckets(node)
+    print(*aval)
+    return aval
 
 def plot_avalanche_distribution(scalefree: bool, show: bool = False) -> None:
     """This function should run the simulation described in section 1.3 and
