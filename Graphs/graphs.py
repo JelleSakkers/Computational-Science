@@ -20,8 +20,8 @@
 ###############################################################################
 #                               STUDENT DETAILS                               #
 ###############################################################################
-# Name:     STUDENT NAME HERE                                                 #
-# UvANetID: STUDENT NUMBER HERE                                               #
+# Name: Jelle Sakkers                                                         #
+# UvANetID: 14619946                                                          #
 ###############################################################################
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -66,11 +66,6 @@ def scalefree_graph(N: int, avg_k: float, gamma: float = 2.5) -> nx.Graph:
     return nx.expected_degree_graph(degrees, selfloops=False)
 
 
-#########################
-# HELPER FUNCTIONS HERE #
-#########################
-
-
 def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -> np.ndarray:
     """
     Simulate the sand avalanche process on a random or scale-free network.
@@ -90,7 +85,29 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
         G = nx.erdos_renyi_graph(N, Pk)
     
 
+    bucket = np.array([G.degree[node] for node in G.nodes])
+    aval = np.zeros(time_steps)
+ 
+    def random_stable_nodes():
+        return np.random.choice(np.where(bucket_sizes < G.degree)[0])
 
+    def neighbor_stable_nodes(n):
+        return np.where(list(G.neighbors(n)) < G.degree(n))[0]
+
+    def find_toppled_buckets():
+        return np.where(bucket_sizes >= G.degree)[0]
+
+    for t in range(time_steps):
+        node = random_stable_nodes()
+        bucket[node] += 1
+        if bucket[node] >= G.degree[node]:
+            neighbors = neighbor_stable_nodes(node)
+            for neighbor in neighbors:
+                bucket[neighbor] += 1
+            s = find_toppled_buckets()
+        aval[t] = len(s)
+        
+        return aval
 
 def plot_avalanche_distribution(scalefree: bool, show: bool = False) -> None:
     """This function should run the simulation described in section 1.3 and
