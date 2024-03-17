@@ -98,12 +98,9 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
         return [neighbor for neighbor in list(G.neighbors(n)) \
                 if bucket[neighbor] < degrees[neighbor]]
 
-    def find_toppled_buckets(n):
-        toppled = 0
-        for neighbor in G.neighbors(n):
-            if bucket[neighbor] >= degrees[neighbor]:
-                toppled += 1
-        return toppled
+    def count_toppled_buckets(node):
+        return sum(1 for neighbor in G.neighbors(node) if \
+                bucket[neighbor] >= degrees[neighbor])
 
     def add_by_chance(n):
         if rng.uniform(0, 1) > sand_lost:
@@ -118,8 +115,7 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
             neighbors = neighbor_stable_nodes(node)
             for neighbor in neighbors:
                 add_by_chance(neighbor)
-        aval[t] = find_toppled_buckets(node)
-    print(*aval)
+        aval[t] = count_toppled_buckets(node)
     return aval
 
 def plot_avalanche_distribution(scalefree: bool, show: bool = False) -> None:
