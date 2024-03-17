@@ -88,33 +88,8 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
         G = nx.scale_free_graph(N, K)
     else:
         G = nx.erdos_renyi_graph(N, Pk)
+    
 
-    # Storage for stable nodes and their current workload
-    bucket = {node: 0 for node in G.nodes()}
-    avalanche = np.zeros(time_steps)
-
-    for t in range(time_steps):
-        # Add sand grain to a random stable node
-        node = np.random.choice(list(bucket.keys()))
-        bucket[node] += 1
-        # Check if the bucket topples
-        if bucket[node] >= G.degree(node):
-            # Topple the bucket
-            neighbors = G.neighbors(node)
-            for neighbor in neighbors:
-                bucket[neighbor] += 1
-            # Remove unstable nodes and update avalanche count
-            unstable_nodes = 0
-            for node in list(bucket.keys()):
-                if bucket[node] >= G.degree(node):
-                    # Remove unstable nodes
-                    G.remove_node(node)
-                    unstable_nodes += 1
-            avalanche[t] = unstable_nodes
-        # Fraction of sand grains lost in transfer
-        for node in bucket:
-            bucket[node] *= (1 - sand_lost)
-    return avalanche
 
 
 def plot_avalanche_distribution(scalefree: bool, show: bool = False) -> None:
@@ -128,7 +103,6 @@ def plot_avalanche_distribution(scalefree: bool, show: bool = False) -> None:
     """
     # Run the simulation
     avalanche_sizes = sand_avalanche(10 ** 4, 10 ** -4, scalefree=scalefree)
-    print(avalanche_sizes)
     plt.xlabel('Avalanche Size $s$')
     plt.ylabel('Probability $p$')
     plt.title('Avalanche Distribution')
@@ -160,7 +134,7 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
     :param scalefree:      If true a scale-free network should be used, if
                            false a random network should be used. Can be
                            ignored until question 2.4a.
-    :param avg_degree:     If true the average degree of the infected nodes
+    :param avg_degree:     If true the average degree of the infected nodee
                            per time step should be returned instead of the
                            amount of infected nodes. Can be ignored until
                            question 2.4c.
