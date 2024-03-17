@@ -135,7 +135,7 @@ def plot_avalanche_distribution(scalefree: bool, bins: int = 20, show: bool = Fa
     # Calculate probabilities from frequencies
     unique_sizes, counts = np.unique(avalanche_sizes, return_counts=True)
     probabilities = counts / len(avalanche_sizes)
-
+ 
     # Plot
     plt.figure()
     plt.hist(avalanche_sizes, bins=bins, density=False, \
