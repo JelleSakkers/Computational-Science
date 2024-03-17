@@ -118,29 +118,42 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
         aval[t] = count_toppled_buckets(node)
     return aval
 
-def plot_avalanche_distribution(scalefree: bool, show: bool = False) -> None:
+
+def plot_avalanche_distribution(scalefree: bool, bins: int = 20, show: bool = False) -> None:
     """This function should run the simulation described in section 1.3 and
     plot an avalanche distribution based on the data retrieved.
 
     :param scalefree: If true a scale-free network is used, otherwise a random
                       network is used.
+    :param bins:      Number of bins for the histogram.
     :param show:      If true the plot is also shown in addition to being
                       stored as png.
     """
     # Run the simulation
     avalanche_sizes = sand_avalanche(10 ** 4, 10 ** -4, scalefree=scalefree)
-    plt.xlabel('Avalanche Size $s$')
-    plt.ylabel('Probability $p$')
+
+    # Calculate probabilities from frequencies
+    unique_sizes, counts = np.unique(avalanche_sizes, return_counts=True)
+    probabilities = counts / len(avalanche_sizes)
+
+    # Plot
+    plt.figure()
+    plt.hist(avalanche_sizes, bins=bins, density=False, \
+            label='Simulated Distribution', alpha=0.7)
+
+    plt.xlabel('number of toppled buckets $s$')
+    plt.ylabel('probability $p$')
     plt.title('Avalanche Distribution')
     plt.grid(True)
-    plt.legend()
+
+    # Set logarithmic y-scale
+    plt.yscale('log')
 
     # Use different filename if random or scale-free is used.
-    filename = f"1-3{'b' if scalefree else 'a'}.png"
+    filename = f"1-3{'b' if scalefree else 'a'}_log.png"
     plt.savefig(filename)
     if show:
         plt.show()
-
 
 #########################
 # HELPER FUNCTIONS HERE #
