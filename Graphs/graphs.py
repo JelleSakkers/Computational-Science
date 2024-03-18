@@ -199,10 +199,13 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
     def infect_node(node_index):
         infected_indices.add(node_index)
 
-    def pick_suscept_neighbor_index(node_index):
+    def search_suscept_neighbor_index(node_index):
         neighbor_indices = set(G.neighbors(node_index))
-        diff = neighbor_indices.difference(infected_indices)
-        return np.random.choice(diff) if np.random.rand() <= i else node_index
+        return neighbor_indices.difference(infected_indices)
+
+    def pick_suscept_neighbor_index(n):
+        return np.random.choice(diff) \
+                if np.random.rand() <= i else node_index
     
     def create_snapshot(t):
         infected_snapshot.append(len(infected_indices))
@@ -212,7 +215,7 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
 
     for t in range(time_steps):
         infected_node_index = choose_infected_node()
-        while list(G.neighbors(infected_node_index)) == []:
+        while search_suscept_neighbor_index(infected_node_index) == set():
             infected_node_index = choose_infected_node()
         suscept_neighbor_index = pick_suscept_neighbor_index(infected_node_index)
         infect_node(suscept_neighbor_index)
@@ -233,7 +236,7 @@ def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
                   as png.
     """
     fig = plt.figure(figsize=(7, 5))
-    t = susceptible_infected(10 ** 4, 5.0, 0.01, 50)
+    t = susceptible_infected(10 ** 4, 5.0, 0.1, 50)
     print(t)
 
     fig.savefig(f"2-1b-{'start' if start else 'full'}.png")
