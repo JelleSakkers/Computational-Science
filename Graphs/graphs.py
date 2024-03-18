@@ -207,15 +207,13 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
         infected = 1 - not_infected
         return infected
     
-    G = nx.erdos_renyi_graph(N, avg_k / N)
-    print(G)
+    G = create_network()
     infected_nodes = set(np.random.choice(range(N), \
             int(start_infected * N), replace=False))
     infected = np.zeros(time_steps)
     
     for t in range(time_steps):
-        infected[t] = len(infected_nodes)
-        update_infection()
+        infected[t] = update_infection()
     return infected
 
 def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
