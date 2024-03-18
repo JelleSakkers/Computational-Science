@@ -205,7 +205,6 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
 
     def pick_suscept_neighbor_index(infected_node_index):
         diff = search_suscept_neighbor_index(infected_node_index)
-        print(diff)
         return np.random.choice(diff) if \
                 np.random.rand() <= i else infected_node_index
     
