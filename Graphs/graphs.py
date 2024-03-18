@@ -180,7 +180,7 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
                            nodes per time step. (So not normalised.)
     """
     def create_network():
-        return nx.erdos_renyi_graph(N, avg_k / (N-1))
+        return nx.erdos_renyi_graph(N, avg_k / N)
 
     def retrieve_infected(neighbors):
         return [neighbor for neighbor in neighbors \
@@ -206,12 +206,13 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
         not_infected = (1 - i) ** r
         infected = 1 - not_infected
         return infected
-
-    G = create_network()
+    
+    G = nx.erdos_renyi_graph(N, avg_k / N)
+    print(G)
     infected_nodes = set(np.random.choice(range(N), \
             int(start_infected * N), replace=False))
     infected = np.zeros(time_steps)
-
+    
     for t in range(time_steps):
         infected[t] = len(infected_nodes)
         update_infection()
