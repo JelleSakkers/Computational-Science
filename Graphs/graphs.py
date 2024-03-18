@@ -20,8 +20,8 @@
 ###############################################################################
 #                               STUDENT DETAILS                               #
 ###############################################################################
-# Name:     STUDENT NAME HERE                                                 #
-# UvANetID: STUDENT NUMBER HERE                                               #
+# Name: Jelle Sakkers                                                         #
+# UvANetID: 14619946                                                          #
 ###############################################################################
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -66,11 +66,6 @@ def scalefree_graph(N: int, avg_k: float, gamma: float = 2.5) -> nx.Graph:
     return nx.expected_degree_graph(degrees, selfloops=False)
 
 
-#########################
-# HELPER FUNCTIONS HERE #
-#########################
-
-
 def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -> np.ndarray:
     """
     Simulate the sand avalanche process on a random or scale-free network.
@@ -89,31 +84,73 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
     else:
         G = nx.erdos_renyi_graph(N, Pk)
 
-    # Storage for stable nodes and their current workload
-    bucket = {node: 0 for node in G.nodes()}
-    avalanche = np.zeros(time_steps)
+    bucket = np.zeros(N, dtype=int)
+    degrees = np.array([G.degree[node] for node in G.nodes])
+    aval = np.zeros(time_steps)
 
-    for t in range(time_steps) and list(G.nodes):
+    def random_stable_nodes():
+        i = np.where(bucket < degrees)[0]
+        if len(i) == 0:
+            return None
+        return np.random.choice(i)
+
+    def neighbor_stable_nodes(n):
+        return [neighbor for neighbor in list(G.neighbors(n)) \
+                if bucket[neighbor] < degrees[neighbor]]
+
+    def count_toppled_buckets(node):
+        return sum(1 for neighbor in G.neighbors(node) if \
+                bucket[neighbor] >= degrees[neighbor])
+
+    def add_by_chance(n):
+        if rng.uniform(0, 1) > sand_lost:
+            bucket[n] += 1
+
+    for t in range(time_steps):
+        node = random_stable_nodes()
+        if node == None:
+            break
+        add_by_chance(node)
+        if bucket[node] >= degrees[node]:
+            neighbors = neighbor_stable_nodes(node)
+            for neighbor in neighbors:
+                add_by_chance(neighbor)
+        aval[t] = count_toppled_buckets(node)
+    return aval
 
 
-def plot_avalanche_distribution(scalefree: bool, show: bool = False) -> None:
+def plot_avalanche_distribution(scalefree: bool, bins: int = 20, show: bool = False) -> None:
     """This function should run the simulation described in section 1.3 and
     plot an avalanche distribution based on the data retrieved.
 
     :param scalefree: If true a scale-free network is used, otherwise a random
                       network is used.
+    :param bins:      Number of bins for the histogram.
     :param show:      If true the plot is also shown in addition to being
                       stored as png.
     """
-    # Run the simulation
     avalanche_sizes = sand_avalanche(10 ** 4, 10 ** -4, scalefree=scalefree)
+
+    unique_sizes, counts = np.unique(avalanche_sizes, return_counts=True)
+    probabilities = counts / len(avalanche_sizes)
+
+    plt.figure()
+    plt.hist(avalanche_sizes, bins=bins, density=False, \
+            label='Simulated Distribution', alpha=0.7)
+
+    plt.xlabel('number of toppled buckets $s$')
+    plt.ylabel('probability $p$')
+    plt.title(f'Avalanche Distribution ({scalefree if scalefree else random})')
+    plt.grid(True)
+
+    # Set logarithmic y-scale
+    plt.yscale('log')
 
     # Use different filename if random or scale-free is used.
     filename = f"1-3{'b' if scalefree else 'a'}.png"
     plt.savefig(filename)
     if show:
         plt.show()
-
 
 #########################
 # HELPER FUNCTIONS HERE #
@@ -133,7 +170,7 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
     :param scalefree:      If true a scale-free network should be used, if
                            false a random network should be used. Can be
                            ignored until question 2.4a.
-    :param avg_degree:     If true the average degree of the infected nodes
+    :param avg_degree:     If true the average degree of the infected nodee
                            per time step should be returned instead of the
                            amount of infected nodes. Can be ignored until
                            question 2.4c.
@@ -142,8 +179,47 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
     :return:               1D numpy array containing the amount of infected
                            nodes per time step. (So not normalised.)
     """
-    # YOUR CODE HERE
-    return ...
+    def create_network():
+        if scalefree:
+            return nx.scale_free_graph(N, avg_k)
+        else:
+            return nx.erdos_renyi_graph(N, avg_k)
+
+    def retrieve_infected(neighbors):
+        return [neighbor for neighbor in neighbors \
+                if neighbor in infected_nodes]
+
+    def retrieve_susceptible(neighbors):
+        return infected_nodes - {node for node in neighbors}
+
+    def update_infection():
+        count = 0
+        for node in infected_nodes:
+            neighbors = list(G.neighbors(node))
+            infected_amount = len(retrieve_infected(neighbors))
+            infection_prob = prob(infected_amount)
+            susceptible_nodes = retrieve_susceptible(neighbors)
+            for node in susceptible_nodes:
+                print(infection_prob)
+                if np.random.rand() <= infection_prob:
+                    infected_nodes.add(node)
+                    count += 1
+        return count
+
+    def prob(r):
+        not_infected = (1 - i) ** r
+        infected = 1 - not_infected
+        return infected
+ 
+    G = create_network()
+    infected_nodes = set(np.random.choice(range(N), \
+            int(start_infected * N), replace=False))
+    infected = np.zeros(time_steps)
+    print(infected_nodes)
+    for t in range(time_steps):
+        infected[t] = update_infection()
+    print(infected)
+    return infected
 
 
 def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
@@ -159,8 +235,7 @@ def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
                   as png.
     """
     fig = plt.figure(figsize=(7, 5))
-
-    # YOUR PLOTTING CODE HERE
+    t = susceptible_infected(10 ** 5, 5.0, 0.01, 50)
 
     fig.savefig(f"2-1b-{'start' if start else 'full'}.png")
     if show:
