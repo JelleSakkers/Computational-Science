@@ -196,17 +196,20 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
     def choose_infected_node():
         return np.random.choice(list(infected_indices)) 
 
-    def infect_node(node_index):
-        infected_indices.add(node_index)
+    def search_suscept_neighbor_index(infected_node_index):
+        neighbor_indices = set(G.neighbors(infected_node_index))
+        return neighbor_indices.difference(infected_indices)
 
-    def search_suscept_neighbor_index(infect_node_index):
-        neighbor_indices = set(G.neighbors(infect_node_index))
-        return list(neighbor_indices.difference(infected_indices))
-
+    def infect_node(infected_node_index):
+        neighbor_indices = search_suscept_neighbor_index(infected_node_index)
+        for neighbor in neighbor_indices:
+            if np.random.rand() <= i:
+                infected_indices.add(neighbor)
+    
     def pick_suscept_neighbor_index(infected_node_index):
         diff = search_suscept_neighbor_index(infected_node_index)
-        return np.random.choice(diff) if \
-                np.random.rand() <= i else infected_node_index
+        return np.random.choice(list(diff)) if \
+                np.random.rand() <= i else infected_node_index 
     
     def create_snapshot(t):
         infected_snapshot.append(len(infected_indices))
@@ -218,10 +221,8 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
         infected_node_index = choose_infected_node()
         while search_suscept_neighbor_index(infected_node_index) == set():
             infected_node_index = choose_infected_node()
-        suscept_neighbor_index = pick_suscept_neighbor_index(infected_node_index)
-        infect_node(suscept_neighbor_index)
+        infect_node(infected_node_index)
         create_snapshot(t)
-    
     return infected_snapshot
 
 def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
@@ -236,14 +237,35 @@ def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
     :param show:  If true the plot is also shown in addition to being stored
                   as png.
     """
-    fig = plt.figure(figsize=(7, 5))
-    t = susceptible_infected(10 ** 4, 5.0, 0.1, 50)
-    print(t)
+    N = 10 ** 5
+    time_steps = 50
 
-    fig.savefig(f"2-1b-{'start' if start else 'full'}.png")
+    fig = plt.figure(figsize=(10, 7))
+
+    # Case 1: avg_k = 0.8, i = 0.1
+    avg_k1 = 0.8
+    i1 = 0.1
+    ys1 = susceptible_infected(N, avg_k1, i1, time_steps)
+    ts = np.arange(0, len(ys1))
+    preva1 = np.array(ys1) / N
+    plt.plot(ts, preva1, label=f"Avg_k: {avg_k1}, i: {i1}")
+
+    # Case 2: avg_k = 5.0, i = 0.01
+    avg_k2 = 5.0
+    i2 = 0.01
+    ys2 = susceptible_infected(N, avg_k2, i2, time_steps)
+    preva2 = np.array(ys2) / N
+    plt.plot(ts, preva2, label=f"Avg_k: {avg_k2}, i: {i2}")
+
+    plt.xlabel("Time $(t)$")
+    plt.ylabel("Prevalence $(I/N)$")
+    plt.title(f"Evolution of Prevalence over Time ({time_steps})")
+    plt.legend()
+
+    filename = f"2-1b-{'start' if start else 'full'}.png"
+    fig.savefig(filename)
     if show:
         plt.show()
-
 
 def plot_approximate_R0(show: bool = False) -> None:
     """This function should run the simulation described in section 2.1 with
