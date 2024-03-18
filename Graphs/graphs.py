@@ -133,7 +133,7 @@ def plot_avalanche_distribution(scalefree: bool, bins: int = 20, show: bool = Fa
 
     unique_sizes, counts = np.unique(avalanche_sizes, return_counts=True)
     probabilities = counts / len(avalanche_sizes)
- 
+
     plt.figure()
     plt.hist(avalanche_sizes, bins=bins, density=False, \
             label='Simulated Distribution', alpha=0.7)
@@ -180,7 +180,10 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
                            nodes per time step. (So not normalised.)
     """
     def create_network():
-        return nx.erdos_renyi_graph(N, avg_k / N)
+        if scalefree:
+            return nx.scale_free_graph(N, avg_k)
+        else:
+            return nx.erdos_renyi_graph(N, avg_k)
 
     def retrieve_infected(neighbors):
         return [neighbor for neighbor in neighbors \
@@ -197,7 +200,8 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
             infection_prob = prob(infected_amount)
             susceptible_nodes = retrieve_susceptible(neighbors)
             for node in susceptible_nodes:
-                if np.random.rand() < infection_prob:
+                print(infection_prob)
+                if np.random.rand() <= infection_prob:
                     infected_nodes.add(node)
                     count += 1
         return count
@@ -206,15 +210,17 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
         not_infected = (1 - i) ** r
         infected = 1 - not_infected
         return infected
-    
+ 
     G = create_network()
     infected_nodes = set(np.random.choice(range(N), \
             int(start_infected * N), replace=False))
     infected = np.zeros(time_steps)
-    
+    print(infected_nodes)
     for t in range(time_steps):
         infected[t] = update_infection()
+    print(infected)
     return infected
+
 
 def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
     """This function should run the simulation described in section 2.1 with
@@ -230,7 +236,6 @@ def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
     """
     fig = plt.figure(figsize=(7, 5))
     t = susceptible_infected(10 ** 5, 5.0, 0.01, 50)
-    print(t)
 
     fig.savefig(f"2-1b-{'start' if start else 'full'}.png")
     if show:
