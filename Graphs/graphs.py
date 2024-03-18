@@ -93,28 +93,7 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
     bucket = {node: 0 for node in G.nodes()}
     avalanche = np.zeros(time_steps)
 
-    for t in range(time_steps):
-        # Add sand grain to a random stable node
-        node = np.random.choice(list(bucket.keys()))
-        bucket[node] += 1
-        # Check if the bucket topples
-        if bucket[node] >= G.degree(node):
-            # Topple the bucket
-            neighbors = G.neighbors(node)
-            for neighbor in neighbors:
-                bucket[neighbor] += 1
-            # Remove unstable nodes and update avalanche count
-            unstable_nodes = 0
-            for node in list(bucket.keys()):
-                if bucket[node] >= G.degree(node):
-                    # Remove unstable nodes
-                    G.remove_node(node)
-                    unstable_nodes += 1
-            avalanche[t] = unstable_nodes
-        # Fraction of sand grains lost in transfer
-        for node in bucket:
-            bucket[node] *= (1 - sand_lost)
-    return avalanche
+    for t in range(time_steps) and list(G.nodes):
 
 
 def plot_avalanche_distribution(scalefree: bool, show: bool = False) -> None:
@@ -128,12 +107,6 @@ def plot_avalanche_distribution(scalefree: bool, show: bool = False) -> None:
     """
     # Run the simulation
     avalanche_sizes = sand_avalanche(10 ** 4, 10 ** -4, scalefree=scalefree)
-    print(avalanche_sizes)
-    plt.xlabel('Avalanche Size $s$')
-    plt.ylabel('Probability $p$')
-    plt.title('Avalanche Distribution')
-    plt.grid(True)
-    plt.legend()
 
     # Use different filename if random or scale-free is used.
     filename = f"1-3{'b' if scalefree else 'a'}.png"
