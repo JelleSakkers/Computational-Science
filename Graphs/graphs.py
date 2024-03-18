@@ -184,7 +184,7 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
 
     def initial_infection():
         infected_nodes = int(start_infected * G.number_of_nodes())
-        intial_nodes = np.random.choice(G.number_of_nodes(), \
+        initial_nodes = np.random.choice(G.number_of_nodes(), \
                 size=infected_nodes, replace=False)
         for node in initial_nodes:
             G.nodes[node]['infected'] = True
@@ -192,7 +192,7 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
     def prob(r):
         not_infected = (1 - i) ** r
         infected = 1 - not_infected
-        return not_infected, infected
+        return infected
 
     def update_infection():
         for node in G.nodes:
@@ -200,19 +200,17 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
                 neighbors = list(G.neighbors(node))
                 infected_neighbors = sum(1 for neighbor in neighbors if \
                         'infected' in G.nodes[neighbor] and G.nodes[neighbor]['infected'])
-                not_infected, infected = (infected_neighbors)
+                infected = prob(infected_neighbors)
                 if np.random.rand() < infected:
                     G.nodes[node]['infected'] = True
 
     G = create_network()
     initial_infection()
     infected_count = np.zeros(time_steps)
-
     for t in range(time_steps):
         update_infection()
         infected_count[t] = sum(1 for node in G.nodes if \
                 'infected' in G.nodes[node])
-    print(infected_count)    
     return infected_count
 
 def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
@@ -228,7 +226,7 @@ def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
                   as png.
     """
     fig = plt.figure(figsize=(7, 5))
-
+    t = susceptible_infected(10 ** 5, 5.0, 0.01, 50)
     # YOUR PLOTTING CODE HERE
 
     fig.savefig(f"2-1b-{'start' if start else 'full'}.png")
