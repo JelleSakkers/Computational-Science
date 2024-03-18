@@ -199,13 +199,15 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
     def infect_node(node_index):
         infected_indices.add(node_index)
 
-    def search_suscept_neighbor_index(node_index):
-        neighbor_indices = set(G.neighbors(node_index))
-        return neighbor_indices.difference(infected_indices)
+    def search_suscept_neighbor_index(infect_node_index):
+        neighbor_indices = set(G.neighbors(infect_node_index))
+        return list(neighbor_indices.difference(infected_indices))
 
-    def pick_suscept_neighbor_index(n):
-        return np.random.choice(diff) \
-                if np.random.rand() <= i else node_index
+    def pick_suscept_neighbor_index(infected_node_index):
+        diff = search_suscept_neighbor_index(infected_node_index)
+        print(diff)
+        return np.random.choice(diff) if \
+                np.random.rand() <= i else infected_node_index
     
     def create_snapshot(t):
         infected_snapshot.append(len(infected_indices))
