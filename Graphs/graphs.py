@@ -233,7 +233,7 @@ def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
                   as png.
     """
     N = 10 ** 5
-    time_steps = 50
+    time_steps = 500
 
     fig = plt.figure(figsize=(10, 7))
 
