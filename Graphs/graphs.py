@@ -152,11 +152,6 @@ def plot_avalanche_distribution(scalefree: bool, bins: int = 20, show: bool = Fa
     if show:
         plt.show()
 
-#########################
-# HELPER FUNCTIONS HERE #
-#########################
-
-
 def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
                          scalefree: bool = False, avg_degree: bool = False,
                          start_infected: float = 0.001) -> np.ndarray:
