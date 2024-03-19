@@ -200,12 +200,7 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
         for neighbor in neighbor_indices:
             if np.random.rand() <= i:
                 infected_indices.add(neighbor)
-    
-    def pick_suscept_neighbor_index(infected_node_index):
-        diff = search_suscept_neighbor_index(infected_node_index)
-        return np.random.choice(list(diff)) if \
-                np.random.rand() <= i else infected_node_index 
-    
+        
     def create_snapshot(t):
         infected_snapshot.append(len(infected_indices))
     
