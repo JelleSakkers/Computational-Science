@@ -201,7 +201,8 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
         while infected_neighbors.size == 0:
             # Find a new stable candidate
             suscepted_node_idx = rng.choice(suscepted_indices)
-            infected_neighbors = np.intersect1d(list(G.neighbors(suscepted_node_idx)), infected_indices)
+            infected_neighbors = np.intersect1d(list(G.neighbors(suscepted_node_idx)), \
+                    infected_indices)
         # Calculate infection probability based on amount of infected neighbors
         infection_prob = 1 - (1 - i) ** len(infected_neighbors)
         if rng.random() <= infection_prob:
@@ -265,9 +266,23 @@ def plot_approximate_R0(show: bool = False) -> None:
     :param show: If true the plot is also shown in addition to being stored
                  as png.
     """
+    N = 10 ** 5
+    time_steps = 50
+    
     fig = plt.figure(figsize=(7, 5))
 
-    # YOUR PLOTTING CODE HERE
+    # Case 1: avg_k = 0.8, i = 0.1
+    avg_k1 = 0.8
+    i1 = 0.1
+    ys1 = susceptible_infected(N, avg_k1, i1, time_steps)
+    ts = np.arange(0, len(ys1))
+    plt.plot(ts, preva1, label=f"Avg_k: {avg_k1}, i: {i1}")
+
+    # Case 2: avg_k = 5.0, i = 0.01
+    avg_k2 = 5.0
+    i2 = 0.01
+    ys2 = susceptible_infected(N, avg_k2, i2, time_steps)
+    plt.plot(ts, preva2, label=f"Avg_k: {avg_k2}, i: {i2}")
 
     fig.savefig("2-1h.png")
     if show:
