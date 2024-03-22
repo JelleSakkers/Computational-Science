@@ -100,14 +100,14 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
     def count_toppled_buckets(node):
         return sum(1 for neighbor in G.neighbors(node) if \
                 bucket[neighbor] == degrees[neighbor])
-    
+
     def add_grain(n):
         bucket[n] += 1
-    
+
     def add_grain_by_chance(n):
         if rng.uniform(0, 1) > sand_lost:
             add_grain(n)
- 
+
     for t in range(time_steps):
         node = choose_random_stable_node()
         if node is None:
@@ -174,44 +174,42 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
     """
 
     infected_indices  = set()
+    suscepted_indices = set()
     infected_snapshot = []
 
-    def create_network():
-        if scalefree:
-            return nx.scale_free_graph(N, avg_k)
-        else:
-            return nx.erdos_renyi_graph(N, avg_k / N)
+    # Create the graph based on the network type
+    if scalefree:
+        G = nx.scale_free_graph(N, avg_k)
+    else:
+        G = nx.erdos_renyi_graph(N, avg_k / N)
 
-    def choose_infected_nodes():
-        return set(np.random.choice(range(N), \
-                int(start_infected * N), replace=False))
+    # Initialize infected nodes
+    infected_indices = rng.choice(range(N),
+                                  int(start_infected * N), replace=False)
+    # Intialize suscepted nodes
+    suscepted_indices = np.setdiff1d(list(G.nodes()), infected_indices)
 
-    def choose_infected_node():
-        return np.random.choice(list(infected_indices)) 
-
-    def search_suscept_neighbor_index(infected_node_index):
-        neighbor_indices = set(G.neighbors(infected_node_index))
-        return neighbor_indices.difference(infected_indices)
-
-    def infect_node(infected_node_index):
-        neighbor_indices = search_suscept_neighbor_index(infected_node_index)
-        for neighbor in neighbor_indices:
-            if np.random.rand() <= i:
-                infected_indices.add(neighbor)
-        
-    def create_snapshot(t):
+    for _ in range(time_steps):
+        # Retrieve a random stable node
+        suscepted_node_idx = rng.choice(suscepted_indices)
+        infected_neighbors = np.intersect1d(list(G.neighbors(suscepted_node_idx)), \
+                infected_indices)
+        # Keep going until a stable node with infected neighbors is found
+        while infected_neighbors.size == 0:
+            # Find a new stable candidate
+            suscepted_node_idx = rng.choice(suscepted_indices)
+            infected_neighbors = np.intersect1d(list(G.neighbors(suscepted_node_idx)), infected_indices)
+        # Calculate infection probability based on amount of infected neighbors
+        infection_prob = 1 - (1 - i) ** len(infected_neighbors)
+        if rng.random() <= infection_prob:
+            # Add node to infected, and remove from suscepted
+            infected_indices = np.append(infected_indices, suscepted_node_idx)
+            suscepted_indices = np.delete(suscepted_indices, \
+                    np.where(suscepted_indices == suscepted_node_idx))
+        # Take a snapshot of the current amount of infected nodes
         infected_snapshot.append(len(infected_indices))
-    
-    G = create_network()
-    infected_indices = choose_infected_nodes()
-
-    for t in range(time_steps):
-        infected_node_index = choose_infected_node()
-        while search_suscept_neighbor_index(infected_node_index) == set():
-            infected_node_index = choose_infected_node()
-        infect_node(infected_node_index)
-        create_snapshot(t)
     return infected_snapshot
+
 
 def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
     """This function should run the simulation described in section 2.1 with
