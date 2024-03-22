@@ -65,7 +65,6 @@ def scalefree_graph(N: int, avg_k: float, gamma: float = 2.5) -> nx.Graph:
 
     return nx.expected_degree_graph(degrees, selfloops=False)
 
-
 def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -> np.ndarray:
     """
     Simulate the sand avalanche process on a random or scale-free network.
@@ -75,51 +74,54 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
     :param scalefree: If True, use a scale-free graph, otherwise use a random graph.
     :return: A 1D numpy array containing the number of toppled buckets per time step.
     """
-    N = 10 ** 3
-    K = 2
-    Pk = K / N
-    t = 0
+
+    N = 1000
+    avg_k = 2 
 
     if scalefree:
-        G = scalefree_graph(N, K)
+        G = scalefree_graph(N, avg_k)
     else:
-        G = nx.erdos_renyi_graph(N, Pk)
+        G = nx.fast_gnp_random_graph(N, avg_k / N)
 
-    bucket  = np.zeros(N, dtype=int)
-    degrees = np.array([G.degree[node] for node in G.nodes])
-    aval    = np.zeros(time_steps, dtype=int)
-
-    def choose_random_stable_node():
-        i = np.where(bucket < degrees)[0]
-        return None if not len(i) else np.random.choice(i)
-
-    def neighbor_stable_nodes(n):
-        return [neighbor for neighbor in list(G.neighbors(n)) \
-                if bucket[neighbor] < degrees[neighbor]]
-
-    def count_toppled_buckets(node):
-        return sum(1 for neighbor in G.neighbors(node) if \
-                bucket[neighbor] == degrees[neighbor])
+    # Initialize buckets (node degrees) with 0 sand grains
+    buckets = np.zeros(N, dtype=int)
     
-    def add_grain(n):
-        bucket[n] += 1
-    
-    def add_grain_by_chance(n):
-        if rng.uniform(0, 1) > sand_lost:
-            add_grain(n)
- 
+    # Store the number of toppled buckets per time step
+    avalanche_counts = np.zeros(time_steps, dtype=int)
+
+    # Set to keep track of current degree sizes
+    degrees = np.array([val for (node, val) in G.degree()])
+    toppled_buckets = set(np.where(buckets >= degrees)[0])
+
     for t in range(time_steps):
-        node = choose_random_stable_node()
-        if node is None:
-            break
-        add_grain(node)
-        if bucket[node] == degrees[node]:
-            neighbors = neighbor_stable_nodes(node)
-            for neighbor in neighbors:
-                add_grain_by_chance(neighbor)
-        aval[t] = count_toppled_buckets(node)
-    return aval
+        # Add a grain of sand to a random stable bucket
+        random_bucket = rng.choice(np.setdiff1d(range(N), 
+            toppled_buckets))
 
+        # Account for fration loss: ℓ = sand_lost
+        if rng.random() < sand_lost:
+            continue
+        buckets[random_bucket] += 1
+        
+        while True:
+            # Check if there are new toppled buckets 
+            degrees = np.array([val for (node, val) in G.degree()])
+            new_toppled_buckets = set(np.where(buckets >= degrees)[0])\
+                    .difference(toppled_buckets)
+            if len(new_toppled_buckets) == 0:
+                break
+            toppled_buckets.update(new_toppled_buckets)
+            avalanche_counts[t] += len(new_toppled_buckets)
+
+            # All stable neighbors get a unit of sand
+            for bucket in new_toppled_buckets:
+                neighbors = list(G.neighbors(bucket))
+                for neighbor in neighbors:
+                    # Account for fration loss: ℓ = sand_lost
+                    if rng.random() < sand_lost:
+                        continue
+                    buckets[neighbor] += 1
+    return avalanche_counts 
 
 def plot_avalanche_distribution(scalefree: bool, bins: int = 20, show: bool = False) -> None:
     """This function should run the simulation described in section 1.3 and
@@ -132,23 +134,24 @@ def plot_avalanche_distribution(scalefree: bool, bins: int = 20, show: bool = Fa
                       stored as png.
     """
     avalanche_sizes = sand_avalanche(10 ** 4, 10 ** -4, scalefree=scalefree)
-    counts = np.unique(avalanche_sizes, return_counts=True)
+    arr = np.array(np.unique(avalanche_sizes, return_counts=True)).T
+    sizes = arr[:, 0]
+    freqs = arr[:, 1]
+    ps = freqs / np.sum(freqs)
 
     plt.figure()
-    plt.hist(counts[1], bins=bins, density=False, \
-            label='Simulated Distribution', alpha=0.7)
-
-    plt.xlabel('number of toppled buckets $s$')
-    plt.ylabel('probability $p$')
-    plt.title(f'Avalanche Distribution')
+    plt.stem(sizes, ps, linefmt='-', markerfmt='o', basefmt=' ')
+    plt.xlabel('Number of toppled buckets $s$')
+    plt.ylabel('Probability $p$')
+    plt.title(f'Avalanche Distribution {"(Scale-Free)" if scalefree else "(Random)"}')
     plt.grid(True)
-
     plt.yscale('log')
-
     filename = f"1-3{'b' if scalefree else 'a'}.png"
     plt.savefig(filename)
+    
     if show:
         plt.show()
+
 
 def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
                          scalefree: bool = False, avg_degree: bool = False,
@@ -174,49 +177,42 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
     """
 
     infected_indices  = set()
+    suscepted_indices = set()
     infected_snapshot = []
 
-    def create_network():
-        if scalefree:
-            return nx.scale_free_graph(N, avg_k)
-        else:
-            return nx.erdos_renyi_graph(N, avg_k / N)
+    # Create the graph based on the network type
+    if scalefree:
+        G = nx.scale_free_graph(N, avg_k)
+    else:
+        G = nx.erdos_renyi_graph(N, avg_k / N)
 
-    def choose_infected_nodes():
-        return set(np.random.choice(range(N), \
-                int(start_infected * N), replace=False))
+    # Initialize infected nodes
+    infected_indices = rng.choice(range(N),
+                                  int(start_infected * N), replace=False)
+    # Intialize suscepted nodes
+    suscepted_indices = np.setdiff1d(list(G.nodes()), infected_indices)
 
-    def choose_infected_node():
-        return np.random.choice(list(infected_indices)) 
-
-    def search_suscept_neighbor_index(infected_node_index):
-        neighbor_indices = set(G.neighbors(infected_node_index))
-        return neighbor_indices.difference(infected_indices)
-
-    def infect_by_chance(infected_neighbors_len):
-        p = 1 - (1 - i) ** infected_neighbors_len
-        return 1 if np.random.rand() <= p else 0
-
-    def infect_suscept_neighbor_index(infected_node_index):
-        suscept_neighbor_indices = search_suscept_neighbor_index(infected_node_index)
-        infected_neighbors_len = len(suscept_neighbor_indices) - G.degree(infected_node_index)
-        for neighbor in suscept_neighbor_indices:
-            if infect_by_chance(infected_neighbors_len):
-                infected_indices.add(neighbor)
-            
-    def create_snapshot(t):
+    for _ in range(time_steps):
+        # Retrieve a random stable node
+        suscepted_node_idx = rng.choice(suscepted_indices)
+        infected_neighbors = np.intersect1d(list(G.neighbors(suscepted_node_idx)), \
+                infected_indices)
+        # Keep going until a stable node with infected neighbors is found
+        while infected_neighbors.size == 0:
+            # Find a new stable candidate
+            suscepted_node_idx = rng.choice(suscepted_indices)
+            infected_neighbors = np.intersect1d(list(G.neighbors(suscepted_node_idx)), infected_indices)
+        # Calculate infection probability based on amount of infected neighbors
+        infection_prob = 1 - (1 - i) ** len(infected_neighbors)
+        if rng.random() <= infection_prob:
+            # Add node to infected, and remove from suscepted
+            infected_indices = np.append(infected_indices, suscepted_node_idx)
+            suscepted_indices = np.delete(suscepted_indices, \
+                    np.where(suscepted_indices == suscepted_node_idx))
+        # Take a snapshot of the current amount of infected nodes
         infected_snapshot.append(len(infected_indices))
-    
-    G = create_network()
-    infected_indices = choose_infected_nodes()
-
-    for t in range(time_steps):
-        infected_node_index = choose_infected_node()
-        while search_suscept_neighbor_index(infected_node_index) == set():
-            infected_node_index = choose_infected_node()
-        infect_suscept_neighbor_index(infected_node_index)
-        create_snapshot(t)
     return infected_snapshot
+
 
 def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
     """This function should run the simulation described in section 2.1 with
@@ -244,11 +240,11 @@ def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
     plt.plot(ts, preva1, label=f"Avg_k: {avg_k1}, i: {i1}")
 
     # Case 2: avg_k = 5.0, i = 0.01
-    #avg_k2 = 5.0
-    #i2 = 0.01
-    #ys2 = susceptible_infected(N, avg_k2, i2, time_steps)
-    #preva2 = np.array(ys2) / N
-    #plt.plot(ts, preva2, label=f"Avg_k: {avg_k2}, i: {i2}")
+    avg_k2 = 5.0
+    i2 = 0.01
+    ys2 = susceptible_infected(N, avg_k2, i2, time_steps)
+    preva2 = np.array(ys2) / N
+    plt.plot(ts, preva2, label=f"Avg_k: {avg_k2}, i: {i2}")
 
     plt.xlabel("Time $(t)$")
     plt.ylabel("Prevalence $(I/N)$")
