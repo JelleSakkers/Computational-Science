@@ -78,21 +78,20 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
     N = 10 ** 3
     K = 2
     Pk = K / N
+    t = 0
 
     if scalefree:
-        G = nx.scale_free_graph(N, K)
+        G = scalefree_graph(N, K)
     else:
         G = nx.erdos_renyi_graph(N, Pk)
 
-    bucket = np.zeros(N, dtype=int)
+    bucket  = np.zeros(N, dtype=int)
     degrees = np.array([G.degree[node] for node in G.nodes])
-    aval = np.zeros(time_steps)
+    aval    = np.zeros(time_steps, dtype=int)
 
-    def random_stable_nodes():
+    def choose_random_stable_node():
         i = np.where(bucket < degrees)[0]
-        if len(i) == 0:
-            return None
-        return np.random.choice(i)
+        return None if not len(i) else np.random.choice(i)
 
     def neighbor_stable_nodes(n):
         return [neighbor for neighbor in list(G.neighbors(n)) \
@@ -100,21 +99,24 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
 
     def count_toppled_buckets(node):
         return sum(1 for neighbor in G.neighbors(node) if \
-                bucket[neighbor] >= degrees[neighbor])
-
-    def add_by_chance(n):
+                bucket[neighbor] == degrees[neighbor])
+    
+    def add_grain(n):
+        bucket[n] += 1
+    
+    def add_grain_by_chance(n):
         if rng.uniform(0, 1) > sand_lost:
-            bucket[n] += 1
-
+            add_grain(n)
+ 
     for t in range(time_steps):
-        node = random_stable_nodes()
-        if node == None:
+        node = choose_random_stable_node()
+        if node is None:
             break
-        add_by_chance(node)
-        if bucket[node] >= degrees[node]:
+        add_grain(node)
+        if bucket[node] == degrees[node]:
             neighbors = neighbor_stable_nodes(node)
             for neighbor in neighbors:
-                add_by_chance(neighbor)
+                add_grain_by_chance(neighbor)
         aval[t] = count_toppled_buckets(node)
     return aval
 
@@ -130,23 +132,19 @@ def plot_avalanche_distribution(scalefree: bool, bins: int = 20, show: bool = Fa
                       stored as png.
     """
     avalanche_sizes = sand_avalanche(10 ** 4, 10 ** -4, scalefree=scalefree)
-
-    unique_sizes, counts = np.unique(avalanche_sizes, return_counts=True)
-    probabilities = counts / len(avalanche_sizes)
+    counts = np.unique(avalanche_sizes, return_counts=True)
 
     plt.figure()
-    plt.hist(avalanche_sizes, bins=bins, density=False, \
+    plt.hist(counts[1], bins=bins, density=False, \
             label='Simulated Distribution', alpha=0.7)
 
     plt.xlabel('number of toppled buckets $s$')
     plt.ylabel('probability $p$')
-    plt.title(f'Avalanche Distribution ({scalefree if scalefree else random})')
+    plt.title(f'Avalanche Distribution')
     plt.grid(True)
 
-    # Set logarithmic y-scale
     plt.yscale('log')
 
-    # Use different filename if random or scale-free is used.
     filename = f"1-3{'b' if scalefree else 'a'}.png"
     plt.savefig(filename)
     if show:
