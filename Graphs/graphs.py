@@ -83,7 +83,6 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
     else:
         G = nx.fast_gnp_random_graph(N, avg_k / N)
 
-<<<<<<< HEAD
     # Initialize buckets (node degrees) with 0 sand grains
     buckets = np.zeros(N, dtype=int)
     
@@ -93,30 +92,6 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
     # Set to keep track of current degree sizes
     degrees = np.array([val for (node, val) in G.degree()])
     toppled_buckets = set(np.where(buckets >= degrees)[0])
-=======
-    bucket  = np.zeros(N, dtype=int)
-    degrees = np.array([G.degree[node] for node in G.nodes])
-    aval    = np.zeros(time_steps, dtype=int)
-
-    def choose_random_stable_node():
-        i = np.where(bucket < degrees)[0]
-        return None if not len(i) else np.random.choice(i)
-
-    def neighbor_stable_nodes(n):
-        return [neighbor for neighbor in list(G.neighbors(n)) \
-                if bucket[neighbor] < degrees[neighbor]]
-
-    def count_toppled_buckets(node):
-        return sum(1 for neighbor in G.neighbors(node) if \
-                bucket[neighbor] == degrees[neighbor])
-
-    def add_grain(n):
-        bucket[n] += 1
-
-    def add_grain_by_chance(n):
-        if rng.uniform(0, 1) > sand_lost:
-            add_grain(n)
->>>>>>> 6066d8639da949d5609349bdf23ab5470f667077
 
     for t in range(time_steps):
         # Add a grain of sand to a random stable bucket
