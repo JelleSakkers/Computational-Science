@@ -195,12 +195,17 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
         neighbor_indices = set(G.neighbors(infected_node_index))
         return neighbor_indices.difference(infected_indices)
 
-    def infect_node(infected_node_index):
-        neighbor_indices = search_suscept_neighbor_index(infected_node_index)
-        for neighbor in neighbor_indices:
-            if np.random.rand() <= i:
+    def infect_by_chance(infected_neighbors_len):
+        p = 1 - (1 - i) ** infected_neighbors_len
+        return 1 if np.random.rand() <= p else 0
+
+    def infect_suscept_neighbor_index(infected_node_index):
+        suscept_neighbor_indices = search_suscept_neighbor_index(infected_node_index)
+        infected_neighbors_len = len(suscept_neighbor_indices) - G.degree(infected_node_index)
+        for neighbor in suscept_neighbor_indices:
+            if infect_by_chance(infected_neighbors_len):
                 infected_indices.add(neighbor)
-        
+            
     def create_snapshot(t):
         infected_snapshot.append(len(infected_indices))
     
@@ -211,7 +216,7 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
         infected_node_index = choose_infected_node()
         while search_suscept_neighbor_index(infected_node_index) == set():
             infected_node_index = choose_infected_node()
-        infect_node(infected_node_index)
+        infect_suscept_neighbor_index(infected_node_index)
         create_snapshot(t)
     return infected_snapshot
 
@@ -228,7 +233,7 @@ def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
                   as png.
     """
     N = 10 ** 5
-    time_steps = 500
+    time_steps = 50
 
     fig = plt.figure(figsize=(10, 7))
 
@@ -241,11 +246,11 @@ def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
     plt.plot(ts, preva1, label=f"Avg_k: {avg_k1}, i: {i1}")
 
     # Case 2: avg_k = 5.0, i = 0.01
-    avg_k2 = 5.0
-    i2 = 0.01
-    ys2 = susceptible_infected(N, avg_k2, i2, time_steps)
-    preva2 = np.array(ys2) / N
-    plt.plot(ts, preva2, label=f"Avg_k: {avg_k2}, i: {i2}")
+    #avg_k2 = 5.0
+    #i2 = 0.01
+    #ys2 = susceptible_infected(N, avg_k2, i2, time_steps)
+    #preva2 = np.array(ys2) / N
+    #plt.plot(ts, preva2, label=f"Avg_k: {avg_k2}, i: {i2}")
 
     plt.xlabel("Time $(t)$")
     plt.ylabel("Prevalence $(I/N)$")
