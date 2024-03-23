@@ -112,7 +112,6 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
                 break
             toppled_buckets.update(new_toppled_buckets)
             avalanche_counts[t] += len(new_toppled_buckets)
-
             # All stable neighbors get a unit of sand
             for bucket in new_toppled_buckets:
                 neighbors = list(G.neighbors(bucket))
@@ -265,9 +264,31 @@ def plot_approximate_R0(show: bool = False) -> None:
     :param show: If true the plot is also shown in addition to being stored
                  as png.
     """
+    
+    def reproduction_number(N, k, i):
+    	return k * i * (N - 1 / N)
+    	
+    N = 10 ** 5
+    time_steps = 50
+
     fig = plt.figure(figsize=(7, 5))
 
-    # YOUR PLOTTING CODE HERE
+    # Case 1: avg_k = 0.8, i = 0.1
+    avg_k1 = 0.8
+    i1 = 0.1
+    R0_values1 = [reproduction_number(N, avg_k1, i1) for _ in range(time_steps)]
+    plt.plot(range(time_steps), R0_values1, label=f"Avg_k: {avg_k1}, i: {i1}")
+
+    # Case 2: avg_k = 5.0, i = 0.01
+    avg_k2 = 5.0
+    i2 = 0.01
+    R0_values2 = [reproduction_number(N, avg_k2, i2) for _ in range(time_steps)]
+    plt.plot(range(time_steps), R0_values2, label=f"Avg_k: {avg_k2}, i: {i2}")
+
+    plt.xlabel("Time $(t)$")
+    plt.ylabel("Approximate $R_0$")
+    plt.title(f"Approximate $R_0$ over Time ({time_steps} time steps)")
+    plt.legend()
 
     fig.savefig("2-1h.png")
     if show:
