@@ -65,6 +65,7 @@ def scalefree_graph(N: int, avg_k: float, gamma: float = 2.5) -> nx.Graph:
 
     return nx.expected_degree_graph(degrees, selfloops=False)
 
+
 def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -> np.ndarray:
     """
     Simulate the sand avalanche process on a random or scale-free network.
@@ -76,7 +77,7 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
     """
 
     N = 1000
-    avg_k = 2 
+    avg_k = 2
 
     if scalefree:
         G = scalefree_graph(N, avg_k)
@@ -85,7 +86,7 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
 
     # Initialize buckets (node degrees) with 0 sand grains
     buckets = np.zeros(N, dtype=int)
-    
+
     # Store the number of toppled buckets per time step
     avalanche_counts = np.zeros(time_steps, dtype=int)
 
@@ -95,16 +96,15 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
 
     for t in range(time_steps):
         # Add a grain of sand to a random stable bucket
-        random_bucket = rng.choice(np.setdiff1d(range(N), 
-            toppled_buckets))
+        random_bucket = rng.choice(np.setdiff1d(range(N), toppled_buckets))
 
         # Account for fration loss: ℓ = sand_lost
         if rng.random() < sand_lost:
             continue
         buckets[random_bucket] += 1
-        
+
         while True:
-            # Check if there are new toppled buckets 
+            # Check if there are new toppled buckets
             degrees = np.array([val for (node, val) in G.degree()])
             new_toppled_buckets = set(np.where(buckets >= degrees)[0])\
                     .difference(toppled_buckets)
@@ -120,7 +120,8 @@ def sand_avalanche(time_steps: int, sand_lost: float, scalefree: bool = False) -
                     if rng.random() < sand_lost:
                         continue
                     buckets[neighbor] += 1
-    return avalanche_counts 
+    return avalanche_counts
+
 
 def plot_avalanche_distribution(scalefree: bool, bins: int = 20, show: bool = False) -> None:
     """This function should run the simulation described in section 1.3 and
@@ -147,7 +148,7 @@ def plot_avalanche_distribution(scalefree: bool, bins: int = 20, show: bool = Fa
     plt.yscale('log')
     filename = f"1-3{'b' if scalefree else 'a'}.png"
     plt.savefig(filename)
-    
+
     if show:
         plt.show()
 
@@ -174,7 +175,6 @@ def susceptible_infected(N: int, avg_k: float, i: float, time_steps: int,
     :return:               1D numpy array containing the amount of infected
                            nodes per time step. (So not normalised.)
     """
-
     infected_indices  = set()
     suscepted_indices = set()
     infected_snapshot = []
@@ -256,6 +256,7 @@ def plot_normalised_prevalence_random(start: bool, show: bool = False) -> None:
     if show:
         plt.show()
 
+
 def plot_approximate_R0(show: bool = False) -> None:
     """This function should run the simulation described in section 2.1 with
     the settings described in 2.1 b. It should then produce a plot with the
@@ -265,48 +266,7 @@ def plot_approximate_R0(show: bool = False) -> None:
     :param show: If true the plot is also shown in addition to being stored
                  as png.
     """
-<<<<<<< HEAD
-    
-    def reproduction_number(N, k, i):
-    	return k * i * (N - 1 / N)
-    	
-    N = 10 ** 5
-    time_steps = 50
-
-=======
-    N = 10 ** 5
-    time_steps = 50
-    
->>>>>>> 29366f04c543b2157f7c3992e05a19c64a00dde3
     fig = plt.figure(figsize=(7, 5))
-
-    # Case 1: avg_k = 0.8, i = 0.1
-    avg_k1 = 0.8
-    i1 = 0.1
-<<<<<<< HEAD
-    R0_values1 = [reproduction_number(N, avg_k1, i1) for _ in range(time_steps)]
-    plt.plot(range(time_steps), R0_values1, label=f"Avg_k: {avg_k1}, i: {i1}")
-=======
-    ys1 = susceptible_infected(N, avg_k1, i1, time_steps)
-    ts = np.arange(0, len(ys1))
-    plt.plot(ts, preva1, label=f"Avg_k: {avg_k1}, i: {i1}")
->>>>>>> 29366f04c543b2157f7c3992e05a19c64a00dde3
-
-    # Case 2: avg_k = 5.0, i = 0.01
-    avg_k2 = 5.0
-    i2 = 0.01
-<<<<<<< HEAD
-    R0_values2 = [reproduction_number(N, avg_k2, i2) for _ in range(time_steps)]
-    plt.plot(range(time_steps), R0_values2, label=f"Avg_k: {avg_k2}, i: {i2}")
-
-    plt.xlabel("Time $(t)$")
-    plt.ylabel("Approximate $R_0$")
-    plt.title(f"Approximate $R_0$ over Time ({time_steps} time steps)")
-    plt.legend()
-=======
-    ys2 = susceptible_infected(N, avg_k2, i2, time_steps)
-    plt.plot(ts, preva2, label=f"Avg_k: {avg_k2}, i: {i2}")
->>>>>>> 29366f04c543b2157f7c3992e05a19c64a00dde3
 
     fig.savefig("2-1h.png")
     if show:
